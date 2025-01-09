@@ -67,7 +67,7 @@
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
     &quot;com.codeium.enabled&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;working&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;semikr__ppa&quot;,
     &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
     &quot;last_opened_file_path&quot;: &quot;D:/Dropbox/PLANiT/github/pyPPA/database&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
@@ -195,6 +195,7 @@
       <workItem from="1736232491251" duration="2292000" />
       <workItem from="1736298137273" duration="14901000" />
       <workItem from="1736395103541" duration="1786000" />
+      <workItem from="1736424062015" duration="737000" />
     </task>
     <task id="LOCAL-00001" summary="v0.0.1 - Almost there&#10;Next step to add LCOE, marginal costs">
       <option name="closed" value="true" />
