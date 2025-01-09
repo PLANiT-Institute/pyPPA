@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="com.obiscr.chatgpt.settings.EasyCodeState">
+    <option name="projectFiles" value="$PROJECT_DIR$/PLANiT_PPAutils_working/__init__.py;D:/Dropbox/PLANiT/github/pyPPA/PLANiT_PPAutils_working/costutils.py;D:/Dropbox/PLANiT/github/pyPPA/PLANiT_PPAutils_working/KEPCOutils.py;D:/Dropbox/PLANiT/github/pyPPA/PLANiT_PPAutils_working/pypsautils.py;D:/Dropbox/PLANiT/github/pyPPA/PLANiT_PPAutils_working/solarutils.py;D:/Dropbox/PLANiT/github/pyPPA/prep/__init__.py;D:/Dropbox/PLANiT/github/pyPPA/prep/prep_benchmark.py;D:/Dropbox/PLANiT/github/pyPPA/prep/prep_capitalcost.py;D:/Dropbox/PLANiT/github/pyPPA/prep/prep_kepcoutil.py;D:/Dropbox/PLANiT/github/pyPPA/prep/prep_solardata.py;D:/Dropbox/PLANiT/github/pyPPA/__init__.py;D:/Dropbox/PLANiT/github/pyPPA/setup.py;D:/Dropbox/PLANiT/github/pyPPA/step1_costanalysis.py;D:/Dropbox/PLANiT/github/pyPPA/step2_ppamodel.py" />
+  </component>
+</project>

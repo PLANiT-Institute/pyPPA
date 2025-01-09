@@ -1,0 +1,474 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="b551a797-c6c4-4f45-a866-3bd42b33ba27" name="Changes" comment="PPA Model V0.1">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;iamhongsanghyun&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/PLANiT-Institute/pyPPA.git&quot;,
+    &quot;accountId&quot;: &quot;9d560fc9-e671-41fa-a639-c721b6472157&quot;
+  }
+}</component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 1
+}</component>
+  <component name="ProjectId" id="2pWfQ6nLlgxegDxHfUOW6d7SYo5" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;ASKED_MARK_IGNORED_FILES_AS_EXCLUDED&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.AccountsToCodyMigration&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ChatTagsLlmMigration&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.CodyAccountHistoryMigration&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.CodyAccountsIdsRefresh&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.CodyAssignOrphanedChatsToActiveAccount&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.CodyConvertUrlToCodebaseName&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.CodyHistoryLlmMigration&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.CodyMigrateChatHistory-v2&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.CodyProjectSettingsMigration&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.DeprecatedChatLlmMigration&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ToggleCodyToolWindowAfterMigration&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;com.codeium.enabled&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;working&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/Dropbox/PLANiT/github/pyPPA/database&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\Dropbox\PLANiT\github\pyPPA\database" />
+      <recent name="D:\Dropbox\PLANiT\github\pyPPA\prep" />
+      <recent name="D:\Dropbox\PLANiT\github\pyPPA\rawdata" />
+      <recent name="D:\Dropbox\PLANiT\github\pyPPA\utils" />
+      <recent name="D:\Dropbox\PLANiT\github\pyPPA" />
+    </key>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-deb605915726-JavaScript-PY-243.22562.220" />
+        <option value="bundled-python-sdk-0fc6c617c4bd-9a18a617cbe4-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-243.22562.220" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="b551a797-c6c4-4f45-a866-3bd42b33ba27" name="Changes" comment="" />
+      <created>1732886732819</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1732886732819</updated>
+      <workItem from="1732886744196" duration="4077000" />
+      <workItem from="1732891811263" duration="1069000" />
+      <workItem from="1732892917188" duration="34681000" />
+      <workItem from="1733024349949" duration="14675000" />
+      <workItem from="1733042681029" duration="651000" />
+      <workItem from="1733044906619" duration="798000" />
+      <workItem from="1733045850145" duration="579000" />
+      <workItem from="1733046876817" duration="57000" />
+      <workItem from="1733050614136" duration="4983000" />
+      <workItem from="1733111349896" duration="3631000" />
+      <workItem from="1733196220604" duration="9424000" />
+      <workItem from="1733290821532" duration="16375000" />
+      <workItem from="1733356890083" duration="9044000" />
+      <workItem from="1733371893314" duration="1203000" />
+      <workItem from="1733376613542" duration="1797000" />
+      <workItem from="1733613015321" duration="4736000" />
+      <workItem from="1733618693933" duration="611000" />
+      <workItem from="1733802411671" duration="3364000" />
+      <workItem from="1734407149044" duration="252000" />
+      <workItem from="1734521417105" duration="3459000" />
+      <workItem from="1734614488147" duration="29000" />
+      <workItem from="1734614871837" duration="3341000" />
+      <workItem from="1734667528686" duration="8238000" />
+      <workItem from="1734706623648" duration="762000" />
+      <workItem from="1734740564137" duration="614000" />
+      <workItem from="1734773952352" duration="477000" />
+      <workItem from="1734856388259" duration="603000" />
+      <workItem from="1735114267683" duration="86000" />
+      <workItem from="1735115304624" duration="426000" />
+      <workItem from="1735196123920" duration="612000" />
+      <workItem from="1735221327454" duration="202000" />
+      <workItem from="1735348713416" duration="4676000" />
+      <workItem from="1735354221687" duration="2003000" />
+      <workItem from="1735356285161" duration="2382000" />
+      <workItem from="1735358702037" duration="613000" />
+      <workItem from="1735359327993" duration="136000" />
+      <workItem from="1735359474747" duration="460000" />
+      <workItem from="1735360423967" duration="1061000" />
+      <workItem from="1735361812668" duration="957000" />
+      <workItem from="1735362794483" duration="250000" />
+      <workItem from="1735363052925" duration="193000" />
+      <workItem from="1735363256715" duration="36000" />
+      <workItem from="1735363298823" duration="199000" />
+      <workItem from="1735363512971" duration="270000" />
+      <workItem from="1735363791852" duration="23000" />
+      <workItem from="1735363825562" duration="216000" />
+      <workItem from="1735364049103" duration="109000" />
+      <workItem from="1735365595645" duration="53000" />
+      <workItem from="1735365658191" duration="1007000" />
+      <workItem from="1735366678107" duration="34000" />
+      <workItem from="1735366854011" duration="39000" />
+      <workItem from="1735366902808" duration="290000" />
+      <workItem from="1735367267299" duration="98000" />
+      <workItem from="1735367378268" duration="4727000" />
+      <workItem from="1735387717454" duration="2508000" />
+      <workItem from="1735440791309" duration="959000" />
+      <workItem from="1735458426674" duration="3344000" />
+      <workItem from="1735520716687" duration="2987000" />
+      <workItem from="1735532604492" duration="45000" />
+      <workItem from="1735538022538" duration="2086000" />
+      <workItem from="1735541928241" duration="23000" />
+      <workItem from="1735541959270" duration="81000" />
+      <workItem from="1735542135813" duration="2827000" />
+      <workItem from="1735605172458" duration="2302000" />
+      <workItem from="1735629563565" duration="4948000" />
+      <workItem from="1735637054585" duration="618000" />
+      <workItem from="1735642262519" duration="2996000" />
+      <workItem from="1735673258670" duration="5049000" />
+      <workItem from="1735689075339" duration="6459000" />
+      <workItem from="1735722211634" duration="772000" />
+      <workItem from="1735727964307" duration="6000" />
+      <workItem from="1735728083407" duration="953000" />
+      <workItem from="1735740115635" duration="672000" />
+      <workItem from="1735782718855" duration="23111000" />
+      <workItem from="1735813879553" duration="1442000" />
+      <workItem from="1735860797314" duration="755000" />
+      <workItem from="1735899672287" duration="14612000" />
+      <workItem from="1735917695814" duration="463000" />
+      <workItem from="1735934454571" duration="392000" />
+      <workItem from="1735934857666" duration="11476000" />
+      <workItem from="1735953274427" duration="3002000" />
+      <workItem from="1736035131167" duration="2824000" />
+      <workItem from="1736053559768" duration="2848000" />
+      <workItem from="1736058771068" duration="9212000" />
+      <workItem from="1736074342386" duration="5372000" />
+      <workItem from="1736083474056" duration="3009000" />
+      <workItem from="1736123402854" duration="13180000" />
+      <workItem from="1736232491251" duration="2292000" />
+      <workItem from="1736298137273" duration="14901000" />
+      <workItem from="1736395103541" duration="1786000" />
+    </task>
+    <task id="LOCAL-00001" summary="v0.0.1 - Almost there&#10;Next step to add LCOE, marginal costs">
+      <option name="closed" value="true" />
+      <created>1733040483142</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1733040483142</updated>
+    </task>
+    <task id="LOCAL-00002" summary="v0.0.1 - still updating">
+      <option name="closed" value="true" />
+      <created>1733045227905</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1733045227905</updated>
+    </task>
+    <task id="LOCAL-00003" summary="v0.0.1 - still updating">
+      <option name="closed" value="true" />
+      <created>1733045369196</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1733045369196</updated>
+    </task>
+    <task id="LOCAL-00004" summary="v0.0.1 - still updating">
+      <option name="closed" value="true" />
+      <created>1733046283162</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1733046283162</updated>
+    </task>
+    <task id="LOCAL-00005" summary="v0.0.1 - still updating">
+      <option name="closed" value="true" />
+      <created>1733046918687</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1733046918687</updated>
+    </task>
+    <task id="LOCAL-00006" summary="v0.0.1 - calculating LCOE">
+      <option name="closed" value="true" />
+      <created>1733055377751</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1733055377751</updated>
+    </task>
+    <task id="LOCAL-00007" summary="v0.0.1 - We are there!">
+      <option name="closed" value="true" />
+      <created>1733128251857</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1733128251857</updated>
+    </task>
+    <task id="LOCAL-00008" summary="v0.0.1 - Solar/Wind Cost - Global Benchmark">
+      <option name="closed" value="true" />
+      <created>1733204159518</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1733204159518</updated>
+    </task>
+    <task id="LOCAL-00009" summary="v0.0.1 Complete (Cost analysis)">
+      <option name="closed" value="true" />
+      <created>1733312071033</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1733312071033</updated>
+    </task>
+    <task id="LOCAL-00010" summary="v0.1.0 Library">
+      <option name="closed" value="true" />
+      <created>1733358008315</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1733358008315</updated>
+    </task>
+    <task id="LOCAL-00011" summary="v0.1.0 Library">
+      <option name="closed" value="true" />
+      <created>1733358493969</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1733358493969</updated>
+    </task>
+    <task id="LOCAL-00012" summary="v0.1.0 Library">
+      <option name="closed" value="true" />
+      <created>1733358797949</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1733358797949</updated>
+    </task>
+    <task id="LOCAL-00013" summary="v0.1.0 Library">
+      <option name="closed" value="true" />
+      <created>1733371916536</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1733371916536</updated>
+    </task>
+    <task id="LOCAL-00014" summary="v0.1.0 Library">
+      <option name="closed" value="true" />
+      <created>1733615691276</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1733615691276</updated>
+    </task>
+    <task id="LOCAL-00015" summary="v0.1.0 Library">
+      <option name="closed" value="true" />
+      <created>1734523013317</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1734523013317</updated>
+    </task>
+    <task id="LOCAL-00016" summary="Step2 PPA Model - Load">
+      <option name="closed" value="true" />
+      <created>1735378696206</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1735378696206</updated>
+    </task>
+    <task id="LOCAL-00017" summary="Step2 PPA Model - Load">
+      <option name="closed" value="true" />
+      <created>1735390228141</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1735390228141</updated>
+    </task>
+    <task id="LOCAL-00018" summary="Step2 PPA Model - Grid Cost &amp; Emission">
+      <option name="closed" value="true" />
+      <created>1735523705288</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1735523705288</updated>
+    </task>
+    <task id="LOCAL-00019" summary="Step2 PPA Model - Grid Cost &amp; Emission">
+      <option name="closed" value="true" />
+      <created>1735606870521</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1735606870521</updated>
+    </task>
+    <task id="LOCAL-00020" summary="Step2 PPA Model - Grid Cost &amp; Emission">
+      <option name="closed" value="true" />
+      <created>1735644828961</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1735644828961</updated>
+    </task>
+    <task id="LOCAL-00021" summary="Step2 PPA Model - Grid Cost &amp; Emission">
+      <option name="closed" value="true" />
+      <created>1735645267808</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1735645267808</updated>
+    </task>
+    <task id="LOCAL-00022" summary="Step2 PPA Model - Wind and solar cost (Step1)">
+      <option name="closed" value="true" />
+      <created>1735678811653</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1735678811653</updated>
+    </task>
+    <task id="LOCAL-00023" summary="Step2 PPA Model - Wind and solar cost (Step1)">
+      <option name="closed" value="true" />
+      <created>1735695769241</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1735695769241</updated>
+    </task>
+    <task id="LOCAL-00024" summary="Step2 PPA Model - Added basig unit commitment">
+      <option name="closed" value="true" />
+      <created>1735815213390</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1735815213390</updated>
+    </task>
+    <task id="LOCAL-00025" summary="Step2 PPA Model - It runs now">
+      <option name="closed" value="true" />
+      <created>1735955987184</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1735955987184</updated>
+    </task>
+    <task id="LOCAL-00026" summary="Step2 PPA Model - It runs now">
+      <option name="closed" value="true" />
+      <created>1736154583521</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1736154583521</updated>
+    </task>
+    <task id="LOCAL-00027" summary="PPA Model Classified">
+      <option name="closed" value="true" />
+      <created>1736319144820</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1736319144820</updated>
+    </task>
+    <task id="LOCAL-00028" summary="PPA Model V0.1">
+      <option name="closed" value="true" />
+      <created>1736397770120</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1736397770120</updated>
+    </task>
+    <task id="LOCAL-00029" summary="PPA Model V0.1">
+      <option name="closed" value="true" />
+      <created>1736398289348</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1736398289348</updated>
+    </task>
+    <task id="LOCAL-00030" summary="PPA Model V0.1">
+      <option name="closed" value="true" />
+      <created>1736402102222</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1736402102222</updated>
+    </task>
+    <option name="localTasksCounter" value="31" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
+    <MESSAGE value="v0.0.1 - Almost there&#10;Next step to add LCOE, marginal costs" />
+    <MESSAGE value="v0.0.1 - still updating" />
+    <MESSAGE value="v0.0.1 - calculating LCOE" />
+    <MESSAGE value="v0.0.1 - We are there!" />
+    <MESSAGE value="v0.0.1 - Solar/Wind Cost - Global Benchmark" />
+    <MESSAGE value="v0.0.1 Complete (Cost analysis)" />
+    <MESSAGE value="v0.1.0 Library" />
+    <MESSAGE value="Step2 PPA Model - Load" />
+    <MESSAGE value="Step2 PPA Model - Grid Cost &amp; Emission" />
+    <MESSAGE value="Step2 PPA Model - Wind and solar cost (Step1)" />
+    <MESSAGE value="Step2 PPA Model - Added basig unit commitment" />
+    <MESSAGE value="Step2 PPA Model - It runs now" />
+    <MESSAGE value="PPA Model Classified" />
+    <MESSAGE value="PPA Model V0.1" />
+    <option name="LAST_COMMIT_MESSAGE" value="PPA Model V0.1" />
+  </component>
+</project>
