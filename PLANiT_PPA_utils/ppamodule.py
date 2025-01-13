@@ -22,6 +22,7 @@ class PPAModel:
             rate_increase,
             selected_sheet,
             carbonprice_init,
+            carbonprice_rate,
             rec_grid_init,
             rec_reduction,
             rec_include,
@@ -47,6 +48,7 @@ class PPAModel:
         self.rate_increase = rate_increase
         self.selected_sheet = selected_sheet
         self.carbonprice_init = carbonprice_init
+        self.carbonprice_rate = carbonprice_rate
         self.rec_grid_init = rec_grid_init
         self.rec_reduction = rec_reduction
         self.smp_limit = smp_limit
@@ -115,7 +117,7 @@ class PPAModel:
                 self.initial_year,
                 self.analysis_target_year,
                 initial_rec=self.carbonprice_init,
-                rate_increase=0.15
+                rate_increase=self.carbonprice_rate
             ).loc[self.start_year:self.analysis_target_year]
 
         # ETS requirement
@@ -392,6 +394,7 @@ class PPAModel:
         if self.max_grid_share is not None and 0 < self.max_grid_share < 1:
             total_demand = load_df['value'].sum() * (
                         self.loads_config.get('SK', 0) + self.loads_config.get('Samsung', 0))
+
             network.add(
                 "GlobalConstraint",
                 "grid_energy_limit",
@@ -541,25 +544,25 @@ class PPAModel:
         generation_by_carrier = generation_by_carrier[['agriPV', 'PV', 'offshore_wind', 'grid_electricity']]
         non_zero_generation = generation_by_carrier.loc[:, generation_by_carrier.sum() > 0]
 
-        import plotly.express as px
-
-        fig = px.area(
-            non_zero_generation,
-            x=non_zero_generation.index,
-            y=non_zero_generation.columns,
-            labels={"index": "Time", "value": "Generation (MWh)", "variable": "Carrier"},
-            title="Hourly Generation by Carrier (Stacked, Non-Zero)"
-        )
-
-        fig.update_layout(
-            xaxis_title="Time",
-            yaxis_title="Generation (MWh)",
-            title_font_size=18,
-            legend_title="Carrier",
-            xaxis_rangeslider_visible=True
-        )
-
-        fig.show()
-        # End of run_model()
+        # import plotly.express as px
+        #
+        # fig = px.area(
+        #     non_zero_generation,
+        #     x=non_zero_generation.index,
+        #     y=non_zero_generation.columns,
+        #     labels={"index": "Time", "value": "Generation (MWh)", "variable": "Carrier"},
+        #     title="Hourly Generation by Carrier (Stacked, Non-Zero)"
+        # )
+        #
+        # fig.update_layout(
+        #     xaxis_title="Time",
+        #     yaxis_title="Generation (MWh)",
+        #     title_font_size=18,
+        #     legend_title="Carrier",
+        #     xaxis_rangeslider_visible=True
+        # )
+        #
+        # fig.show()
+        # # End of run_model()
 
         return output_analysis
