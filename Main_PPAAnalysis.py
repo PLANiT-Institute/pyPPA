@@ -22,9 +22,6 @@ def main():
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.subheader("Currency Exchange")
-        currency_exchange = st.number_input("Currency Exchange Rate", min_value=0.0, value=1.0, step=0.01)
-
         # Section: Scenario Information
         st.subheader("Scenario Information")
         scenario_name = st.text_input("Scenario Name", value="Default Scenario")
@@ -37,15 +34,9 @@ def main():
             "Samsung": st.number_input("Load for Samsung (MW)", min_value=0, value=3000, step=100),
         }
 
-        # Section: Battery Settings
-        st.subheader("Battery Settings")
-        battery_include = st.checkbox("Include Battery?", value=False)
-
-        # Section: Currency and Grid Settings
-        st.subheader("Currency and Grid Settings")
-        currency_exchange = st.number_input("Currency Exchange Rate (KRW/USD)", min_value=900, max_value=2000, value=1400, step=1)
         # Slider for max grid share in percentage
         # Checkbox for enabling/disabling the slider
+        st.subheader("Maximum Grid Share")
         use_max_grid_share = st.checkbox("Enable Max Grid Share?")
 
         # Slider for max grid share in percentage (only shown if checkbox is checked)
@@ -62,21 +53,30 @@ def main():
 
         sense = st.selectbox("Grid Share Condition", options=["==", "<=", ">="])
 
+        # Section: Time Settings
+        st.subheader("Time")
+        initial_year = st.number_input("Initial Year", min_value=2000, value=2023, step=1)
+        end_year = st.number_input("Analysis Target Year", min_value=2000, value=2050, step=1)
+        model_year = st.number_input("Model Year", min_value=2000, value=2030, step=1)
+
     with col2:
+
         # Section: Rate and SMP Settings
-        st.subheader("Rate and SMP Settings")
+        st.subheader("Grid Rate")
         rate_increase = st.number_input("Rate Increase (% per year)", min_value=0.0, value=0.05, step=0.01)
         selected_sheet = st.selectbox(
             "Select a Sheet",
             options=["HV_C_I", "HV_C_II", "HV_C_III"],  # List of dropdown options
             index=2  # Default selection index (e.g., HV_C_III)
         )
+
+        st.subheader("Renewable Cost")
         smp_limit = st.checkbox("Renewable LCOE Limit (>= SMP + REC)?", value=True)
         smp_init = st.number_input("Initial SMP (KRW/MWh)", min_value=0, value=167000, step=1000)
         smp_increase = st.number_input("SMP Annual Increase (%)", min_value=0.0, value=0.05, step=0.01)
 
         # Section: REC Settings
-        st.subheader("REC Settings")
+        st.subheader("Carbon Price")
         # Checkbox for Carbon Price Scenario
         use_ngfs_carbon_price = st.checkbox("Use NGFS Carbon Price Scenario?", value=True)
 
@@ -89,19 +89,22 @@ def main():
                                                step=0.01)
             carbonprice_rate = st.number_input("Custom Carbon Price Annual Increase (%)", min_value=0.0, value=0.0, step=0.01)
 
+        st.subheader("REC")
         rec_grid_init = st.number_input("Initial REC Price (KRW/MWh)", min_value=0, value=80000, step=1000)
         rec_reduction = st.checkbox("REC Reduction to 0?", value=True)
         rec_increase = st.number_input("REC Price Annual Increase (%)", min_value=0.0, value=0.0, step=0.01)
         rec_include = st.checkbox("Does REC include in PPA fees (True: REC is not recognized)?", value=True)
 
-        # Section: Time Settings
-        st.subheader("Time Settings")
-        initial_year = st.number_input("Initial Year", min_value=2000, value=2023, step=1)
-        analysis_target_year = st.number_input("Analysis Target Year", min_value=2000, value=2050, step=1)
-        start_year = st.number_input("Start Year", min_value=2000, value=2030, step=1)
-        end_year = st.number_input("End Year", min_value=2000, value=2030, step=1)
+        # Section: Currency and Grid Settings
+        st.subheader("Currency and Grid Settings")
+        currency_exchange = st.number_input("Currency Exchange Rate (KRW/USD)", min_value=900, max_value=2000,
+                                            value=1400, step=1)
 
     with col3:
+
+        # Section: Battery Settings
+        st.subheader("Battery")
+        battery_include = st.checkbox("Include Battery?", value=False)
 
         # Section: Battery Parameters
         st.subheader("Battery Parameters")
@@ -148,9 +151,8 @@ def main():
             smp_init,
             smp_increase,
             initial_year,
-            analysis_target_year,
-            start_year,
             end_year,
+            model_year,
             # Parameters
             default_params,
             # Battery Parameters
@@ -180,8 +182,7 @@ def main():
                 "REC Include in PPA Fees",
                 "Initial Year",
                 "Analysis Target Year",
-                "Start Year",
-                "End Year",
+                "Modelling Year",
                 "Battery Capital Cost per MW (KRW)",  # Unit: KRW
                 "Battery Capital Cost per MWh (KRW)",  # Unit: KRW
                 "Battery Storage Efficiency (%)",  # Unit: %
@@ -201,8 +202,8 @@ def main():
                 sense, rate_increase, selected_sheet,
                 smp_limit, smp_init, smp_increase, carbonprice_init, carbonprice_rate,
                 rec_grid_init, rec_reduction, rec_increase,
-                rec_include, initial_year, analysis_target_year,
-                start_year, end_year, battery_parameters["capital_cost_per_mw"],
+                rec_include, initial_year, end_year,
+                model_year, battery_parameters["capital_cost_per_mw"],
                 battery_parameters["capital_cost_per_mwh"], battery_parameters["efficiency_store"] * 100,
                                                             battery_parameters["efficiency_dispatch"] * 100,
                 battery_parameters["max_hours"], default_params['buffer'],
@@ -213,6 +214,8 @@ def main():
 
         parameters_df = pd.DataFrame(parameters_summary)
         output = ppa_model.run_model()
+        st.subheader("Output File Selection")
+        st.write(output)
 
         # File input selection box for the output file
 

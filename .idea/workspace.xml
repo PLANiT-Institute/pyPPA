@@ -4,11 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b551a797-c6c4-4f45-a866-3bd42b33ba27" name="Changes" comment="PPA Model V0.1">
-      <change beforePath="$PROJECT_DIR$/.idea/pyPPA.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/pyPPA.iml" afterDir="false" />
+    <list default="true" id="b551a797-c6c4-4f45-a866-3bd42b33ba27" name="Changes" comment="User input">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Main_PPAAnalysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/Main_PPAAnalysis.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/PLANiT_PPA_utils/ppamodule.py" beforeDir="false" afterPath="$PROJECT_DIR$/PLANiT_PPA_utils/ppamodule.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/result/20250102_test1.xlsx" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -205,7 +205,7 @@
       <workItem from="1736489441654" duration="45000" />
       <workItem from="1736676907791" duration="2763000" />
       <workItem from="1736686209012" duration="4527000" />
-      <workItem from="1736749773556" duration="9715000" />
+      <workItem from="1736749773556" duration="21924000" />
     </task>
     <task id="LOCAL-00001" summary="v0.0.1 - Almost there&#10;Next step to add LCOE, marginal costs">
       <option name="closed" value="true" />
@@ -455,7 +455,15 @@
       <option name="project" value="LOCAL" />
       <updated>1736424811454</updated>
     </task>
-    <option name="localTasksCounter" value="32" />
+    <task id="LOCAL-00032" summary="User input">
+      <option name="closed" value="true" />
+      <created>1736763683700</created>
+      <option name="number" value="00032" />
+      <option name="presentableId" value="LOCAL-00032" />
+      <option name="project" value="LOCAL" />
+      <updated>1736763683700</updated>
+    </task>
+    <option name="localTasksCounter" value="33" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -488,6 +496,7 @@
     <MESSAGE value="Step2 PPA Model - It runs now" />
     <MESSAGE value="PPA Model Classified" />
     <MESSAGE value="PPA Model V0.1" />
-    <option name="LAST_COMMIT_MESSAGE" value="PPA Model V0.1" />
+    <MESSAGE value="User input" />
+    <option name="LAST_COMMIT_MESSAGE" value="User input" />
   </component>
 </project>

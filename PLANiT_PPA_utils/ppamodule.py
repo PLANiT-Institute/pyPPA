@@ -31,9 +31,8 @@ class PPAModel:
             smp_init,
             smp_increase,
             initial_year,
-            analysis_target_year,
-            start_year,
             end_year,
+            model_year,
             # Parameters
             default_params,
             # Battery Parameters
@@ -55,9 +54,8 @@ class PPAModel:
         self.smp_init = smp_init
         self.rec_include = rec_include
         self.initial_year = initial_year
-        self.analysis_target_year = analysis_target_year
-        self.start_year = start_year
         self.end_year = end_year
+        self.model_year = model_year
         self.rec_increase = rec_increase
         self.smp_increase = smp_increase
 
@@ -82,51 +80,51 @@ class PPAModel:
         # Create rec_grid
         if self.rec_reduction:
             rec_grid = pd.DataFrame(
-                index=range(self.initial_year, self.analysis_target_year + 1),
+                index=range(self.initial_year, self.end_year + 1),
                 data={
                     'value': np.linspace(self.rec_grid_init, 0.0,
-                                         len(range(self.initial_year, self.analysis_target_year + 1)))
+                                         len(range(self.initial_year, self.end_year + 1)))
                 }
-            ).loc[self.start_year:self.analysis_target_year]
+            ).loc[self.model_year:self.end_year]
         else:
             rec_grid = _kepco.create_rec_grid(
                 self.initial_year,
-                self.analysis_target_year,
+                self.end_year,
                 initial_rec=self.rec_grid_init,
                 rate_increase=self.rec_increase,
-            ).loc[self.start_year:self.analysis_target_year]
+            ).loc[self.model_year:self.end_year]
 
-        rec_ren = rec_grid.loc[self.start_year].value if self.rec_include == True else 0
+        rec_ren = rec_grid.loc[self.model_year].value if self.rec_include == True else 0
 
         smp_grid = _kepco.create_rec_grid(
             self.initial_year,
-            self.analysis_target_year,
+            self.end_year,
             initial_rec=self.smp_init,
             rate_increase=self.smp_increase
-        ).loc[self.start_year]['value'] if self.smp_limit == True else 0
+        ).loc[self.model_year]['value'] if self.smp_limit == True else 0
 
         # Carbon price
         if self.carbonprice_init == 'NGFS':
             carbonprice_grid = _cost.process_and_interpolate_annual_data(
                 'database/NGFS_carbonprice.xlsx',
                 'Net Zero 2050'
-            ).loc[self.start_year:self.analysis_target_year]
+            ).loc[self.model_year:self.end_year]
             carbonprice_grid *= self.currency_exchange  # KRW/kgCO2
         else:
             carbonprice_grid = _kepco.create_rec_grid(
                 self.initial_year,
-                self.analysis_target_year,
+                self.end_year,
                 initial_rec=self.carbonprice_init,
                 rate_increase=self.carbonprice_rate
-            ).loc[self.start_year:self.analysis_target_year]
+            ).loc[self.model_year:self.end_year]
 
         # ETS requirement
         ets_requirement = pd.DataFrame(
-            index=range(self.initial_year, self.analysis_target_year + 1),
+            index=range(self.initial_year, self.end_year + 1),
             data={
-                'value': np.linspace(0.9, 0.0, len(range(self.initial_year, self.analysis_target_year + 1)))
+                'value': np.linspace(0.9, 0.0, len(range(self.initial_year, self.end_year + 1)))
             }
-        ).loc[self.start_year:self.analysis_target_year]
+        ).loc[self.model_year:self.end_year]
         ets_requirement = 1 - ets_requirement
 
         # Helper function for cost analysis
@@ -134,7 +132,7 @@ class PPAModel:
             cost_df = _cost.calculate_capex_by_grid(
                 grid=grid,
                 dist_cols=self.default_params['dist_cols'],
-                capex=solar_capex_df.loc[self.start_year],
+                capex=solar_capex_df.loc[self.model_year],
                 connection_fees=self.default_params['connection_fees'],
                 landcost_factor=landcost_factor,
                 power_density=self.default_params['power_density'],
@@ -184,11 +182,11 @@ class PPAModel:
 
         # Capacity factors
         capacity_factors = pd.DataFrame(
-            index=range(self.start_year, self.analysis_target_year + 1),
+            index=range(self.initial_year, self.end_year + 1),
             data={
-                'value': np.linspace(0.17, 0.25, (self.analysis_target_year - self.start_year + 1)),
+                'value': np.linspace(0.17, 0.25, (self.end_year - self.initial_year + 1)),
             }
-        )
+        ).loc[self.model_year:self.end_year]
 
         # OPEX, lifetime, and discount rate
         opex_rate = 0.025
@@ -196,7 +194,7 @@ class PPAModel:
         discount_rate = 0.025
 
         pv_stats['LCOE'] = _cost.annualise_capital_cost(
-            capacity_factors.loc[self.start_year].astype(float).value,
+            capacity_factors.loc[self.model_year].astype(float).value,
             pv_stats['max_cost'],
             pv_stats['max_cost'] / pv_stats['bin_capacity_gw'] / 1000 * opex_rate,
             lifetime,
@@ -207,7 +205,7 @@ class PPAModel:
         )
 
         agri_stats['LCOE'] = _cost.annualise_capital_cost(
-            capacity_factors.loc[self.start_year].astype(float).value,
+            capacity_factors.loc[self.model_year].astype(float).value,
             agri_stats['max_cost'],
             agri_stats['max_cost'] / agri_stats['bin_capacity_gw'] / 1000 * opex_rate,
             lifetime,
@@ -232,11 +230,11 @@ class PPAModel:
         wind_df = wind_df[wind_df['admin_boundaries'].str.contains('인천광역시|인천 광역시|경기도|충청남도')]
         wind_df = wind_df[wind_df['DT_m'] <= self.default_params['max_distace']]
 
-        windcapex_rate = gridinf_df['wind_capex'] / gridinf_df['wind_capex'].loc[self.start_year]
+        windcapex_rate = gridinf_df['wind_capex'] / gridinf_df['wind_capex'].loc[self.model_year]
 
-        wind_df['LCOE'] = wind_df['LCOE'] * windcapex_rate.loc[self.start_year] * 1000
+        wind_df['LCOE'] = wind_df['LCOE'] * windcapex_rate.loc[self.model_year] * 1000
         wind_df['annualised_cost'] = wind_df['LCOE'] + wind_df['rec_weight'] * rec_ren
-        capacity_factors = np.linspace(0.25, 0.35, num=20)
+        # capacity_factors = np.linspace(0.25, 0.35, num=20)
         wind_df['capacity'] = self.default_params['wind_cap']
 
         kr_to_en = {
@@ -264,7 +262,7 @@ class PPAModel:
         windcost_df['type'] = 'offshore_wind'
 
         windcost_df['LCOE'] = windcost_df['max_cost']
-        windcost_df['capital_cost'] = wind_capex_df.loc[self.start_year]
+        windcost_df['capital_cost'] = wind_capex_df.loc[self.model_year]
 
         cost_df = pd.concat([df, windcost_df])
 
@@ -276,8 +274,8 @@ class PPAModel:
 
         # Create hourly snapshots
         snapshots = pd.date_range(
-            f"{self.start_year}-01-01",
-            f"{self.end_year}-12-31 23:59:59",
+            f"{self.model_year}-01-01",
+            f"{self.model_year}-12-31 23:59:59",
             freq="h"
         )
         network.set_snapshots(snapshots)
@@ -288,8 +286,8 @@ class PPAModel:
         # Read and filter load data
         load_df = pd.read_sql_table('load_patterns', 'sqlite:///database/load_patterns.db').set_index('datetime')
         load_df = load_df.loc[
-            (load_df.index >= f"{self.start_year}-01-01") &
-            (load_df.index <= f"{self.end_year}-12-31 23:59:59")
+            (load_df.index >= f"{self.model_year}-01-01") &
+            (load_df.index <= f"{self.model_year}-12-31 23:59:59")
             ]
 
         load_sk = load_df['value'] * self.loads_config["SK"]
@@ -317,23 +315,32 @@ class PPAModel:
 
         # Process KEPCO data
         filepath = "database/KEPCO.xlsx"
-        temporal_df, contract_fee = _kepco.process_kepco_data(filepath, self.start_year, self.selected_sheet)
+        temporal_df, contract_fee = _kepco.process_kepco_data(filepath, self.model_year, self.selected_sheet)
 
         # Align usage fees with snapshots
         # Base usage fee for time-varying
         # and create multi-year price projection
-        num_years = self.end_year - self.start_year + 1
+        num_years = self.end_year - 2025 + 1
         multiyearusagefees_df, multiyearcontractfees_df = _kepco.multiyear_pricing(
-            temporal_df, contract_fee, self.start_year, num_years, self.rate_increase, annualised_contract=True
+            temporal_df, contract_fee, 2025, num_years, self.rate_increase, annualised_contract=True
         )
-        multiyearusagefees_df['rate'] += multiyearusagefees_df['contract_fee']
-        multiyearcontractfees_df.set_index('year', inplace=True)
-        multiyearcontractfees_df *= 1000  # krw/MWh
+
+        multiyearusagefees_df['rate'] = multiyearusagefees_df['rate'] + multiyearusagefees_df['contract_fee']
         multiyearusagefees_df['rate'] *= 1000  # krw/MWh
 
-        # Set KEPCO generator marginal costs to the usage fees
-        network.generators_t.marginal_cost["KEPCO"] = multiyearusagefees_df['rate']
-        network.loads_t["contract_fees"] = multiyearcontractfees_df
+        # 1) Ensure the index is a DatetimeIndex
+        multiyearusagefees_df.index = pd.to_datetime(multiyearusagefees_df.index)
+
+        # 2) Filter exactly for `model_year`
+        singleyearusagefees_df = multiyearusagefees_df[
+            multiyearusagefees_df.index.year == self.model_year
+            ]
+
+        # 3) Align with the single-year snapshots (2030-01-01 .. 2030-12-31)
+        singleyearusagefees_df = singleyearusagefees_df.reindex(network.snapshots).fillna(method="ffill")
+
+        # 4) Assign
+        network.generators_t.marginal_cost["KEPCO"] = singleyearusagefees_df['rate']
 
         # Add carriers for PPA technologies
         network.add("Carrier", "PV", color='green')
@@ -341,35 +348,44 @@ class PPAModel:
         network.add("Carrier", "offshore_wind", color='blue')
         network.add("Carrier", "one_node", color='black')
 
-        # Emission intensity
-        co2intensity = gridinf_df.loc[self.start_year:self.end_year, "co2"] * 0.001  # tons/MWh
-        co2_time_series = pd.Series(index=snapshots, dtype=float)
-        for year in range(self.start_year, self.end_year + 1):
-            co2_time_series.loc[co2_time_series.index.year == year] = co2intensity.loc[year]
+        # # Emission intensity
+
+        # Emission intensity for the model_year (tons/MWh)
+        co2intensity = gridinf_df.loc[self.model_year, "co2"] * 0.001  # Convert to tons/MWh
+
+        # Create a time series for the snapshots of the model_year
+        co2_time_series = pd.Series(
+            co2intensity,  # Same value repeated for all snapshots
+            index=snapshots  # Snapshots for the model_year
+        )
 
         network.carriers.loc["grid_electricity", "co2_emissions_per_mwh"] = co2_time_series.mean()
 
-        renshare = gridinf_df.loc[self.start_year:self.end_year, "ren_share"]
-        renshare_series = pd.Series(index=snapshots, dtype=float)
-        for year in range(self.start_year, self.end_year + 1):
-            renshare_series.loc[renshare_series.index.year == year] = co2intensity.loc[year]
+        # Renewable share for the model_year
+        renshare = gridinf_df.loc[self.model_year, "ren_share"]
+
+        # Create a time series for the snapshots of the model_year
+        renshare_series = pd.Series(
+            renshare,  # Same value repeated for all snapshots
+            index=snapshots  # Snapshots for the model_year
+        )
 
         network.carriers.loc["grid_electricity", "ren_share"] = renshare_series.mean()
 
-        gridinf_df = gridinf_df.loc[self.start_year: self.analysis_target_year]
+        gridinf_df = gridinf_df.loc[self.initial_year: self.end_year]
 
         # Add PPA model
         solarpattern_df = \
         pd.read_sql_table('solar_patterns', 'sqlite:///database/solar_patterns.db').set_index('datetime')['q99']
         solarpattern_df = solarpattern_df.loc[
-            (solarpattern_df.index >= f"{self.start_year}-01-01") &
-            (solarpattern_df.index <= f"{self.end_year}-12-31 23:59:59")
+            (solarpattern_df.index >= f"{self.model_year}-01-01") &
+            (solarpattern_df.index <= f"{self.model_year}-12-31 23:59:59")
             ].reindex(snapshots, fill_value=0)
 
         windpattern_df = pd.read_sql_table('wind_patterns', 'sqlite:///database/wind_patterns.db').set_index('index')
         windpattern_df = windpattern_df.loc[
-            (windpattern_df.index >= f"{self.start_year}-01-01") &
-            (windpattern_df.index <= f"{self.end_year}-12-31 23:59:59")
+            (windpattern_df.index >= f"{self.model_year}-01-01") &
+            (windpattern_df.index <= f"{self.model_year}-12-31 23:59:59")
             ].reindex(snapshots, fill_value=0)
 
         for i, row in cost_df.iterrows():
@@ -425,7 +441,7 @@ class PPAModel:
 
         # Analyze results
         output_analysis = {}
-        analysis_period = self.analysis_target_year - self.start_year
+        analysis_period = self.end_year - self.model_year
 
         active_generators = network.generators_t.p.loc[:, network.generators_t.p.max() > 0]
         print("Details of generators with positive dispatch:")
@@ -435,7 +451,7 @@ class PPAModel:
         total_capacity_by_carrier = network.generators.groupby("carrier")["p_nom_opt"].sum()
         output_analysis["capacity (MW)"] = pd.DataFrame(
             [total_capacity_by_carrier] * (analysis_period + 1),
-            index=range(self.start_year, self.start_year + (analysis_period + 1))
+            index=range(self.model_year, self.model_year + (analysis_period + 1))
         )
 
         print("Total Capacity Needed by Carrier (MW):")
@@ -449,7 +465,7 @@ class PPAModel:
 
         output_analysis["generation (GWh)"] = pd.DataFrame(
             [total_generation_by_carrier] * (analysis_period + 1),
-            index=range(self.start_year, self.start_year + (analysis_period + 1))
+            index=range(self.model_year, self.model_year + (analysis_period + 1))
         )
 
         # Generation share
@@ -462,11 +478,13 @@ class PPAModel:
 
         print("Share of each source (%)")
         print(generation_by_carrier.sum() / generation_by_carrier.sum().sum() * 100)
-
         # Calculate total marginal cost by carrier
+
+        # Check if time-varying marginal costs are available
         if "marginal_cost" in network.generators_t:
             mc_timevarying_df = network.generators_t.marginal_cost
         else:
+            # Create a DataFrame with zero marginal cost as default
             mc_timevarying_df = pd.DataFrame(
                 0.0,
                 index=network.snapshots,
@@ -490,8 +508,24 @@ class PPAModel:
 
         output_analysis["marginal cost (KRW)"] = pd.DataFrame(
             [marginal_cost_by_carrier] * (analysis_period + 1),
-            index=range(self.start_year, self.start_year + (analysis_period + 1))
+            index=range(self.model_year, self.model_year + (analysis_period + 1))
         )
+
+        # 5) Apply the annual rate_increase to grid_electricity in the output DataFrame
+        if "grid_electricity" in marginal_cost_by_carrier:
+            base_cost = marginal_cost_by_carrier["grid_electricity"]
+            years = range(self.model_year, self.model_year + (analysis_period + 1))
+
+
+            # For each year, apply (1 + rate_increase)^(year - start_year)
+            rate_adjusted_costs = {
+                year: base_cost * ((1 + self.rate_increase) ** (year - self.model_year))
+                for year in years
+            }
+
+            # Update marginal costs for grid_electricity per year
+            for year, cost in rate_adjusted_costs.items():
+                output_analysis["marginal cost (KRW)"].loc[year, "grid_electricity"] = cost
 
         print("Total Marginal Costs by Carrier (KRW)")
         print(marginal_cost_by_carrier)
@@ -507,21 +541,26 @@ class PPAModel:
             (output_analysis["generation (GWh)"] * 1000)
         )
 
+        # output_analysis["carbon intensity (kgCO2/MWh)"] = gridinf_df.loc[self.model_year: self.end_year+1] / 1000
+
         # Emissions
         output_analysis["emission (tCO2)"] = (
                 output_analysis["generation (GWh)"]["grid_electricity"] * 1000 *
-                gridinf_df["co2"] / 1000  # MWh * tCO2/MWh
+                gridinf_df.loc[self.model_year: self.end_year+1]["co2"] / 1000  # MWh * tCO2/MWh
         )
+
         output_analysis["carbon price (KRW)"] = (
                 output_analysis["emission (tCO2)"] *
                 carbonprice_grid["value"] *
                 ets_requirement["value"]
         )
 
+        output_analysis["renewable share (%)"] = gridinf_df.loc[self.model_year: self.end_year+1]['ren_share']
+
         # REC
         output_analysis["rec amount (REC)"] = (
                 output_analysis["generation (GWh)"]["grid_electricity"] * 1000 *
-                (1 - gridinf_df['ren_share'])
+                (1 - gridinf_df.loc[self.model_year: self.end_year+1]['ren_share'])
         )
         output_analysis["rec payment (KRW)"] = (
                 output_analysis["rec amount (REC)"] *
@@ -534,35 +573,16 @@ class PPAModel:
                 output_analysis["carbon price (KRW)"]
         )
 
-        print(f"Total payment (Billion KRW in {self.start_year}):")
+        print(f"Total payment (Billion KRW in {self.model_year}):")
         print(output_analysis["total payment (KRW)"].iloc[0] / 1e9)
 
-        print(f"Payment (KRW/MWh in {self.start_year}):")
-        print(output_analysis["total payment (KRW)"].iloc[0] / output_analysis['generation (GWh)'].loc[self.start_year].sum() / 1000)
+        print(f"Payment (KRW/MWh in {self.model_year}):")
+        print(output_analysis["total payment (KRW)"].iloc[0] / output_analysis['generation (GWh)'].loc[self.model_year].sum() / 1000)
 
         # Plot results
         generation_by_carrier = generation_by_carrier[['agriPV', 'PV', 'offshore_wind', 'grid_electricity']]
         non_zero_generation = generation_by_carrier.loc[:, generation_by_carrier.sum() > 0]
 
-        # import plotly.express as px
-        #
-        # fig = px.area(
-        #     non_zero_generation,
-        #     x=non_zero_generation.index,
-        #     y=non_zero_generation.columns,
-        #     labels={"index": "Time", "value": "Generation (MWh)", "variable": "Carrier"},
-        #     title="Hourly Generation by Carrier (Stacked, Non-Zero)"
-        # )
-        #
-        # fig.update_layout(
-        #     xaxis_title="Time",
-        #     yaxis_title="Generation (MWh)",
-        #     title_font_size=18,
-        #     legend_title="Carrier",
-        #     xaxis_rangeslider_visible=True
-        # )
-        #
-        # fig.show()
-        # # End of run_model()
+        output_analysis["generation by carrier (MWh)"] = generation_by_carrier
 
         return output_analysis
