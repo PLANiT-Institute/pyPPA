@@ -61,6 +61,10 @@ def main():
 
     with col2:
 
+        # Section: PPA Payment Setting
+        st.subheader("PPA Payment Settings")
+        ppa_payment_type = st.selectbox("PPA Payment Type", options=["Current", "Levelised"])
+
         # Section: Rate and SMP Settings
         st.subheader("Grid Rate")
         rate_increase = st.number_input("Rate Increase (% per year)", min_value=0.0, value=0.05, step=0.01)
@@ -156,7 +160,9 @@ def main():
             # Parameters
             default_params,
             # Battery Parameters
-            battery_parameters
+            battery_parameters,
+            ppa_payment_type
+
         )
 
         # Collect parameters into a dictionary for the summary
@@ -171,6 +177,7 @@ def main():
                 "Grid Share Condition",
                 "Rate Increase (% per year)",  # Unit: %
                 "Selected Sheet",
+                "PPA Payment Type",
                 "SMP Limit",
                 "Initial SMP (KRW/MWh)",  # Unit: KRW/MWh
                 "SMP Annual Increase (%)",  # Unit: %
@@ -199,7 +206,7 @@ def main():
             "Value": [
                 scenario_name, loads_config["SK"], loads_config["Samsung"],
                 battery_include, currency_exchange, max_grid_share_percent,
-                sense, rate_increase, selected_sheet,
+                sense, rate_increase, selected_sheet, ppa_payment_type,
                 smp_limit, smp_init, smp_increase, carbonprice_init, carbonprice_rate,
                 rec_grid_init, rec_reduction, rec_increase,
                 rec_include, initial_year, end_year,
@@ -212,45 +219,52 @@ def main():
             ]
         }
 
+        print(f" \n \nOptimisation process start: {scenario_name} \n \n")
+
         parameters_df = pd.DataFrame(parameters_summary)
         output = ppa_model.run_model()
-        st.subheader("Output File Selection")
-        st.write(output)
 
-        # File input selection box for the output file
+        if output is not "Infeasible":
 
-        try:
-            # Ensure parameters_df is string-only and safe for Excel
-            # parameters_df = parameters_df.astype(str)
-            parameters_df = parameters_df.applymap(
-                lambda x: f"'{x}" if isinstance(x, str) and x.startswith(('=', '+', '-', '@')) else x
-            )
+            st.subheader("Output File Selection")
+            st.write(output)
 
-            # Save the output to an Excel file
-            with pd.ExcelWriter(output_file_path, engine='openpyxl') as writer:
-                # Write Parameters Summary
-                parameters_df.to_excel(writer, sheet_name="Parameters Summary", index=False)
+            # File input selection box for the output file
 
-                # Save each model output as a separate sheet
-                for sheet_name, data in output.items():
-                    if isinstance(data, str):
-                        from io import StringIO
-                        df = pd.read_csv(StringIO(data), delim_whitespace=True)
-                    elif isinstance(data, pd.Series):
-                        df = data.to_frame(name="Value")
-                    elif isinstance(data, pd.DataFrame):
-                        df = data
-                    else:
-                        st.warning(f"Unrecognized data format for sheet '{sheet_name}'. Skipping.")
-                        continue
+            try:
+                # Ensure parameters_df is string-only and safe for Excel
+                # parameters_df = parameters_df.astype(str)
+                parameters_df = parameters_df.applymap(
+                    lambda x: f"'{x}" if isinstance(x, str) and x.startswith(('=', '+', '-', '@')) else x
+                )
 
-                    valid_sheet_name = sheet_name[:31] if len(sheet_name) > 31 else sheet_name
-                    df.to_excel(writer, sheet_name=valid_sheet_name, index=True)
+                # Save the output to an Excel file
+                with pd.ExcelWriter(output_file_path, engine='openpyxl') as writer:
+                    # Write Parameters Summary
+                    parameters_df.to_excel(writer, sheet_name="Parameters Summary", index=False)
 
-            st.success(f"Output successfully saved to {output_file_path}")
+                    # Save each model output as a separate sheet
+                    for sheet_name, data in output.items():
+                        if isinstance(data, str):
+                            from io import StringIO
+                            df = pd.read_csv(StringIO(data), delim_whitespace=True)
+                        elif isinstance(data, pd.Series):
+                            df = data.to_frame(name="Value")
+                        elif isinstance(data, pd.DataFrame):
+                            df = data
+                        else:
+                            st.warning(f"Unrecognized data format for sheet '{sheet_name}'. Skipping.")
+                            continue
 
-        except Exception as e:
-            st.error(f"An error occurred: {e}")
+                        valid_sheet_name = sheet_name[:31] if len(sheet_name) > 31 else sheet_name
+                        df.to_excel(writer, sheet_name=valid_sheet_name, index=True)
+
+                st.success(f"Output successfully saved to {output_file_path}")
+
+            except Exception as e:
+                st.error(f"An error occurred: {e}")
+        else:
+            st.warning("The model is infeasible. Please check your inputs and try again.")
 
 
 if __name__ == "__main__":

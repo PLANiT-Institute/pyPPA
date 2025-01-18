@@ -36,7 +36,8 @@ class PPAModel:
             # Parameters
             default_params,
             # Battery Parameters
-            battery_parameters
+            battery_parameters,
+            ppa_payment_type
     ):
         # Store user-defined parameters
         self.loads_config = loads_config
@@ -62,6 +63,7 @@ class PPAModel:
         # Internal modeling parameters
         self.default_params = default_params
         self.battery_parameters = battery_parameters
+        self.ppa_payment_type = ppa_payment_type
 
     def run_model(self):
         """
@@ -389,27 +391,63 @@ class PPAModel:
             ].reindex(snapshots, fill_value=0)
 
         for i, row in cost_df.iterrows():
+
+            generator_name = f"{row['type']}_{i}"
+            # define the pattern for the PPA technology
             if row['type'] in ['PV', 'agriPV']:
-                p_max_pu = solarpattern_df
+                pattern_df = solarpattern_df
             else:
-                p_max_pu = windpattern_df.get(row['region'], pd.Series(0, index=snapshots))
+                pattern_df = windpattern_df.get(row['region'], pd.Series(0, index=snapshots))
+
+            if pattern_df.max() > 1:
+                raise ValueError("The pattern_df has values greater than 1")
+
+            # redefine if self_max_grid_share is True:
+            if self.max_grid_share == 1:
+                p_max_pu = 0
+
+            else: # max ppa share is > 0 then define the ppa payment type
+                if self.ppa_payment_type == "Current":
+                    p_max_pu = pattern_df
+
+                elif self.ppa_payment_type == "Levelised":
+                    capacity_factor = pattern_df.mean()
+                    p_max_pu = 1
+
+                else:
+                    raise ValueError("Invalid ppa_payment_type. Choose 'Current' or 'Levelised'.")
 
             network.add(
                 "Generator",
-                name=f"{row['type']}_{i}",
+                name=generator_name,
                 bus='one_bus',
                 carrier=row['type'],
                 p_nom_extendable=False,
                 p_nom=row['bin_capacity_gw'] * 1000,
                 lifetime=20,
                 marginal_cost=row['LCOE'],
-                p_max_pu=0 if self.max_grid_share == 1 else p_max_pu
+                p_max_pu=p_max_pu
             )
 
-        # Grid share constraints
+            # Redefine if self_max_grid_share is True
+            if self.max_grid_share != 1:  # max PPA share is > 0, then define the PPA payment type
+                if self.ppa_payment_type == "Levelised":
+                    # Calculate capacity factor and maximum annual generation
+                    capacity_factor = pattern_df.mean()
+                    max_generation = capacity_factor * row['bin_capacity_gw'] * 1000 * 8760  # MWh
+
+                    # Ensure generator exists before adding its properties
+                    if generator_name not in network.generators.index:
+                        raise RuntimeError(f"Generator '{generator_name}' not found in the network.")
+
+                    # Update the generator component to include the e_sum_max property
+                    network.generators.loc[generator_name, "e_sum_max"] = max_generation
+                    # print(f"Set e_sum_max for generator '{generator_name}' to {max_generation:.2f} MWh.")
+
+            # Grid share constraints
         if self.max_grid_share is not None and 0 < self.max_grid_share < 1:
             total_demand = load_df['value'].sum() * (
-                        self.loads_config.get('SK', 0) + self.loads_config.get('Samsung', 0))
+                    self.loads_config.get('SK', 0) + self.loads_config.get('Samsung', 0))
 
             network.add(
                 "GlobalConstraint",
@@ -420,7 +458,7 @@ class PPAModel:
                 constant=total_demand * self.max_grid_share
             )
 
-        # Battery
+            # Battery
         if self.battery_parameters['include']:
             network.add(
                 "StorageUnit",
@@ -436,153 +474,213 @@ class PPAModel:
                 cyclic_state_of_charge=True
             )
 
-        # Solve
-        network.optimize()
+            # Solve
+        result = network.optimize()
 
-        # Analyze results
-        output_analysis = {}
-        analysis_period = self.end_year - self.model_year
+        import logging
 
-        active_generators = network.generators_t.p.loc[:, network.generators_t.p.max() > 0]
-        print("Details of generators with positive dispatch:")
-        print(active_generators.columns.tolist())
+        # Configure logging
+        logging.basicConfig(level=logging.INFO)
+        logger = logging.getLogger(__name__)
 
-        # Group by carrier and sum capacity
-        total_capacity_by_carrier = network.generators.groupby("carrier")["p_nom_opt"].sum()
-        output_analysis["capacity (MW)"] = pd.DataFrame(
-            [total_capacity_by_carrier] * (analysis_period + 1),
-            index=range(self.model_year, self.model_year + (analysis_period + 1))
-        )
+        if result is not None:  # Check if the network is solved
+            logger.info("Optimization successfully solved. Proceeding with post-simulation analysis.")
 
-        print("Total Capacity Needed by Carrier (MW):")
-        print(total_capacity_by_carrier)
+            import logging
 
-        # Group generation
-        generation_by_carrier = network.generators_t.p.groupby(network.generators.carrier, axis=1).sum()
-        print("Generation by Carrier (GWh):")
-        print(generation_by_carrier.sum() / 1000)
-        total_generation_by_carrier = generation_by_carrier.sum() / 1000
+            # Configure logging
+            logging.basicConfig(level=logging.INFO)
+            logger = logging.getLogger(__name__)
 
-        output_analysis["generation (GWh)"] = pd.DataFrame(
-            [total_generation_by_carrier] * (analysis_period + 1),
-            index=range(self.model_year, self.model_year + (analysis_period + 1))
-        )
+            if self.ppa_payment_type == "Levelised":
+                # Post-optimization: Verify constraints for each generator
+                for i, row in cost_df.iterrows():
+                    generator_name = f"{row['type']}_{i}"
 
-        # Generation share
-        output_analysis["share (%)"] = output_analysis['generation (GWh)'].div(
-            output_analysis['generation (GWh)'].sum(axis=1), axis=0
-        )
+                    # Ensure the generator exists in the network
+                    if generator_name not in network.generators.index:
+                        logger.warning(f"Generator '{generator_name}' not found in the network. Skipping verification.")
+                        continue
 
-        print("Usage rate (%):")
-        print(generation_by_carrier.sum() / 8760 / total_capacity_by_carrier * 100)
+                    # Retrieve the total energy supplied by the generator
+                    total_energy_supplied = network.generators_t.p[generator_name].sum()
 
-        print("Share of each source (%)")
-        print(generation_by_carrier.sum() / generation_by_carrier.sum().sum() * 100)
-        # Calculate total marginal cost by carrier
+                    # Retrieve the e_sum_max constraint value
+                    e_sum_max = network.generators.loc[generator_name, "e_sum_max"]
 
-        # Check if time-varying marginal costs are available
-        if "marginal_cost" in network.generators_t:
-            mc_timevarying_df = network.generators_t.marginal_cost
-        else:
-            # Create a DataFrame with zero marginal cost as default
-            mc_timevarying_df = pd.DataFrame(
-                0.0,
-                index=network.snapshots,
-                columns=network.generators.index
+                    # Log the generator's energy-related details
+                    logger.info(f"Generator: {generator_name}")
+                    logger.info(f"  Total Energy Supplied: {total_energy_supplied:.2f} MWh")
+                    logger.info(f"  Maximum Allowed Energy (e_sum_max): {e_sum_max:.2f} MWh")
+
+                    # Check if the e_sum_max constraint is respected
+                    if total_energy_supplied > e_sum_max + 1e-3:
+                        logger.error(f"  ❌ Energy constraint violated for {generator_name}!")
+                    else:
+                        logger.info(f"  ✅ Energy constraint respected for {generator_name}.")
+
+                    # Check peak power
+                    actual_peak = network.generators_t.p[generator_name].max()
+                    p_nom_opt = network.generators.at[generator_name, "p_nom_opt"]
+
+                    # Log the generator's power-related details
+                    logger.info(f"  Actual Peak Power Supplied: {actual_peak:.2f} MW")
+                    logger.info(f"  Nominal Power Capacity: {p_nom_opt:.2f} MW")
+
+                    if actual_peak > p_nom_opt + 1e-3:
+                        logger.error(f"  ❌ Peak power constraint violated for {generator_name}!")
+                    else:
+                        logger.info(f"  ✅ Peak power constraint respected for {generator_name}.")
+
+                    logger.info("-" * 40)
+
+            # Analyze results
+            output_analysis = {}
+            analysis_period = self.end_year - self.model_year
+
+            active_generators = network.generators_t.p.loc[:, network.generators_t.p.max() > 0]
+            print("Details of generators with positive dispatch:")
+            print(active_generators.columns.tolist())
+
+            # Group by carrier and sum capacity
+            total_capacity_by_carrier = network.generators.groupby("carrier")["p_nom_opt"].sum()
+            output_analysis["capacity (MW)"] = pd.DataFrame(
+                [total_capacity_by_carrier] * (analysis_period + 1),
+                index=range(self.model_year, self.model_year + (analysis_period + 1))
             )
 
-        mc_static_series = network.generators["marginal_cost"].fillna(0.0)
-        mc_static_df = pd.DataFrame(index=network.snapshots, columns=network.generators.index)
-        for gen in mc_static_series.index:
-            mc_static_df[gen] = mc_static_series[gen]
+            print("Total Capacity Needed by Carrier (MW):")
+            print(total_capacity_by_carrier)
 
-        marginal_cost_df = mc_timevarying_df.add(mc_static_df, fill_value=0.0)
+            # Group generation
+            generation_by_carrier = network.generators_t.p.groupby(network.generators.carrier, axis=1).sum()
+            print("Generation by Carrier (GWh):")
+            print(generation_by_carrier.sum() / 1000)
+            total_generation_by_carrier = generation_by_carrier.sum() / 1000
 
-        # Multiply by dispatch
-        gen_dispatch_df = network.generators_t.p
-        gen_total_cost_series = (gen_dispatch_df * marginal_cost_df).sum(axis=0)
+            output_analysis["generation (GWh)"] = pd.DataFrame(
+                [total_generation_by_carrier] * (analysis_period + 1),
+                index=range(self.model_year, self.model_year + (analysis_period + 1))
+            )
 
-        # Group by carrier
-        carrier_series = network.generators["carrier"]
-        marginal_cost_by_carrier = gen_total_cost_series.groupby(carrier_series).sum()
+            # Generation share
+            output_analysis["share (%)"] = output_analysis['generation (GWh)'].div(
+                output_analysis['generation (GWh)'].sum(axis=1), axis=0
+            )
 
-        output_analysis["marginal cost (KRW)"] = pd.DataFrame(
-            [marginal_cost_by_carrier] * (analysis_period + 1),
-            index=range(self.model_year, self.model_year + (analysis_period + 1))
-        )
+            print("Usage rate (%):")
+            print(generation_by_carrier.sum() / 8760 / total_capacity_by_carrier * 100)
 
-        # 5) Apply the annual rate_increase to grid_electricity in the output DataFrame
-        if "grid_electricity" in marginal_cost_by_carrier:
-            base_cost = marginal_cost_by_carrier["grid_electricity"]
-            years = range(self.model_year, self.model_year + (analysis_period + 1))
+            print("Share of each source (%)")
+            print(generation_by_carrier.sum() / generation_by_carrier.sum().sum() * 100)
+            # Calculate total marginal cost by carrier
 
+            # Check if time-varying marginal costs are available
+            if "marginal_cost" in network.generators_t:
+                mc_timevarying_df = network.generators_t.marginal_cost
+            else:
+                # Create a DataFrame with zero marginal cost as default
+                mc_timevarying_df = pd.DataFrame(
+                    0.0,
+                    index=network.snapshots,
+                    columns=network.generators.index
+                )
 
-            # For each year, apply (1 + rate_increase)^(year - start_year)
-            rate_adjusted_costs = {
-                year: base_cost * ((1 + self.rate_increase) ** (year - self.model_year))
-                for year in years
-            }
+            mc_static_series = network.generators["marginal_cost"].fillna(0.0)
+            mc_static_df = pd.DataFrame(index=network.snapshots, columns=network.generators.index)
+            for gen in mc_static_series.index:
+                mc_static_df[gen] = mc_static_series[gen]
 
-            # Update marginal costs for grid_electricity per year
-            for year, cost in rate_adjusted_costs.items():
-                output_analysis["marginal cost (KRW)"].loc[year, "grid_electricity"] = cost
+            marginal_cost_df = mc_timevarying_df.add(mc_static_df, fill_value=0.0)
 
-        print("Total Marginal Costs by Carrier (KRW)")
-        print(marginal_cost_by_carrier)
+            # Multiply by dispatch
+            gen_dispatch_df = network.generators_t.p
+            gen_total_cost_series = (gen_dispatch_df * marginal_cost_df).sum(axis=0)
 
-        cost_per_mwh = (
-                marginal_cost_by_carrier /
-                total_generation_by_carrier.replace(0, 1e-10)
-        ).astype(float).round(2)
-        print("Amount to be paid per MWh (rounded to 2 decimal places):")
-        print(cost_per_mwh)
+            # Group by carrier
+            carrier_series = network.generators["carrier"]
+            marginal_cost_by_carrier = gen_total_cost_series.groupby(carrier_series).sum()
 
-        output_analysis["cost per MWh (KRW)"] = output_analysis["marginal cost (KRW)"].div(
-            (output_analysis["generation (GWh)"] * 1000)
-        )
+            output_analysis["marginal cost (KRW)"] = pd.DataFrame(
+                [marginal_cost_by_carrier] * (analysis_period + 1),
+                index=range(self.model_year, self.model_year + (analysis_period + 1))
+            )
 
-        # output_analysis["carbon intensity (kgCO2/MWh)"] = gridinf_df.loc[self.model_year: self.end_year+1] / 1000
+            # 5) Apply the annual rate_increase to grid_electricity in the output DataFrame
+            if "grid_electricity" in marginal_cost_by_carrier:
+                base_cost = marginal_cost_by_carrier["grid_electricity"]
+                years = range(self.model_year, self.model_year + (analysis_period + 1))
 
-        # Emissions
-        output_analysis["emission (tCO2)"] = (
-                output_analysis["generation (GWh)"]["grid_electricity"] * 1000 *
-                gridinf_df.loc[self.model_year: self.end_year+1]["co2"] / 1000  # MWh * tCO2/MWh
-        )
+                # For each year, apply (1 + rate_increase)^(year - start_year)
+                rate_adjusted_costs = {
+                    year: base_cost * ((1 + self.rate_increase) ** (year - self.model_year))
+                    for year in years
+                }
 
-        output_analysis["carbon price (KRW)"] = (
-                output_analysis["emission (tCO2)"] *
-                carbonprice_grid["value"] *
-                ets_requirement["value"]
-        )
+                # Update marginal costs for grid_electricity per year
+                for year, cost in rate_adjusted_costs.items():
+                    output_analysis["marginal cost (KRW)"].loc[year, "grid_electricity"] = cost
 
-        output_analysis["renewable share (%)"] = gridinf_df.loc[self.model_year: self.end_year+1]['ren_share']
+            print("Total Marginal Costs by Carrier (KRW)")
+            print(marginal_cost_by_carrier)
 
-        # REC
-        output_analysis["rec amount (REC)"] = (
-                output_analysis["generation (GWh)"]["grid_electricity"] * 1000 *
-                (1 - gridinf_df.loc[self.model_year: self.end_year+1]['ren_share'])
-        )
-        output_analysis["rec payment (KRW)"] = (
-                output_analysis["rec amount (REC)"] *
-                rec_grid["value"]
-        )
+            cost_per_mwh = (
+                    marginal_cost_by_carrier /
+                    total_generation_by_carrier.replace(0, 1e-10)
+            ).astype(float).round(2)
+            print("Amount to be paid per MWh (rounded to 2 decimal places):")
+            print(cost_per_mwh)
 
-        output_analysis["total payment (KRW)"] = (
-                output_analysis["marginal cost (KRW)"].sum(axis=1) +
-                output_analysis["rec payment (KRW)"] +
-                output_analysis["carbon price (KRW)"]
-        )
+            output_analysis["cost per MWh (KRW)"] = output_analysis["marginal cost (KRW)"].div(
+                (output_analysis["generation (GWh)"] * 1000)
+            )
 
-        print(f"Total payment (Billion KRW in {self.model_year}):")
-        print(output_analysis["total payment (KRW)"].iloc[0] / 1e9)
+            # output_analysis["carbon intensity (kgCO2/MWh)"] = gridinf_df.loc[self.model_year: self.end_year+1] / 1000
 
-        print(f"Payment (KRW/MWh in {self.model_year}):")
-        print(output_analysis["total payment (KRW)"].iloc[0] / output_analysis['generation (GWh)'].loc[self.model_year].sum() / 1000)
+            # Emissions
+            output_analysis["emission (tCO2)"] = (
+                    output_analysis["generation (GWh)"]["grid_electricity"] * 1000 *
+                    gridinf_df.loc[self.model_year: self.end_year + 1]["co2"] / 1000  # MWh * tCO2/MWh
+            )
 
-        # Plot results
-        generation_by_carrier = generation_by_carrier[['agriPV', 'PV', 'offshore_wind', 'grid_electricity']]
-        non_zero_generation = generation_by_carrier.loc[:, generation_by_carrier.sum() > 0]
+            output_analysis["carbon price (KRW)"] = (
+                    output_analysis["emission (tCO2)"] *
+                    carbonprice_grid["value"] *
+                    ets_requirement["value"]
+            )
 
-        output_analysis["generation by carrier (MWh)"] = generation_by_carrier
+            output_analysis["renewable share (%)"] = gridinf_df.loc[self.model_year: self.end_year + 1]['ren_share']
+
+            # REC
+            output_analysis["rec amount (REC)"] = (
+                    output_analysis["generation (GWh)"]["grid_electricity"] * 1000 *
+                    (1 - gridinf_df.loc[self.model_year: self.end_year + 1]['ren_share'])
+            )
+            output_analysis["rec payment (KRW)"] = (
+                    output_analysis["rec amount (REC)"] *
+                    rec_grid["value"]
+            )
+
+            output_analysis["total payment (KRW)"] = (
+                    output_analysis["marginal cost (KRW)"].sum(axis=1) +
+                    output_analysis["rec payment (KRW)"] +
+                    output_analysis["carbon price (KRW)"]
+            )
+
+            print(f"Total payment (Billion KRW in {self.model_year}):")
+            print(output_analysis["total payment (KRW)"].iloc[0] / 1e9)
+
+            print(f"Payment (KRW/MWh in {self.model_year}):")
+            print(output_analysis["total payment (KRW)"].iloc[0] / output_analysis['generation (GWh)'].loc[
+                self.model_year].sum() / 1000)
+
+            # Plot results
+            generation_by_carrier = generation_by_carrier[['agriPV', 'PV', 'offshore_wind', 'grid_electricity']]
+            non_zero_generation = generation_by_carrier.loc[:, generation_by_carrier.sum() > 0]
+
+            output_analysis["generation by carrier (MWh)"] = generation_by_carrier
+
+        else:
+            output_analysis = "Infeasible"
 
         return output_analysis
