@@ -5,9 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b551a797-c6c4-4f45-a866-3bd42b33ba27" name="Changes" comment="PIP Versoin">
+      <change afterPath="$PROJECT_DIR$/PLANiT_PPA/fileloader.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/config.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/pyPPA.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/pyPPA.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/setup.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PLANiT_PPA/ppamodule.py" beforeDir="false" afterPath="$PROJECT_DIR$/PLANiT_PPA/ppamodule.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

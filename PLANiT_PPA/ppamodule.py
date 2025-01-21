@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import PLANiT_PPA.costutils as _cost
 import PLANiT_PPA.KEPCOutils as _kepco
+import PLANiT_PPA.fileloader as _fileloader
 import pypsa
 
 class PPAModel:
@@ -74,7 +75,9 @@ class PPAModel:
         print("Calculate PV CAPEX")
 
         # Read grid data
-        gridinf_df = pd.read_csv("database/grid.csv", index_col=0)
+        # gridinf_df = pd.read_csv("database/grid.csv", index_col=0)
+
+        gridinf_df = pd.read_csv(_fileloader.get_file_path("database_path", "grid_file"), index_col=0)
 
         solar_capex_df = gridinf_df['solar_capex']
         wind_capex_df = gridinf_df['wind_capex']
@@ -108,8 +111,7 @@ class PPAModel:
         # Carbon price
         if self.carbonprice_init == 'NGFS':
             carbonprice_grid = _cost.process_and_interpolate_annual_data(
-                'database/NGFS_carbonprice.xlsx',
-                'Net Zero 2050'
+                _fileloader.get_file_path("database_path", "carbonprice_file"), "Net Zero 2050"
             ).loc[self.model_year:self.end_year]
             carbonprice_grid *= self.currency_exchange  # KRW/kgCO2
         else:
@@ -154,10 +156,10 @@ class PPAModel:
 
         # Process Grid
         grid = _cost.process_grid_site_data(
-            buffer_distance=self.default_params['buffer'],
-            site_path="gisdata/clusterpolygon.gpkg",
-            grid_path="gisdata/db_semippa.gpkg",
-            output_path="gisdata/grids_within_modified_buffer.gpkg"
+            buffer_distance=self.default_params["buffer"],
+            site_path=_fileloader.get_file_path("gisdata_path", "cluster_file"),
+            grid_path=_fileloader.get_file_path("gisdata_path", "db_semippa_file"),
+            output_path=_fileloader.get_file_path("gisdata_path", "grid_buffer_file")
         )
 
         # Analyze PV Costs
@@ -227,7 +229,7 @@ class PPAModel:
         """
         Import Wind Data
         """
-        wind_df = pd.read_excel('database/wind_grid.xlsx', index_col=0)
+        wind_df = pd.read_excel(_fileloader.get_file_path("database_path", "wind_grid_file"), index_col=0)
         wind_df.dropna(subset=['admin_boundaries'], inplace=True)
         wind_df = wind_df[wind_df['admin_boundaries'].str.contains('인천광역시|인천 광역시|경기도|충청남도')]
         wind_df = wind_df[wind_df['DT_m'] <= self.default_params['max_distace']]
@@ -316,7 +318,7 @@ class PPAModel:
         )
 
         # Process KEPCO data
-        filepath = "database/KEPCO.xlsx"
+        filepath = _fileloader.get_file_path("database_path", "kepco_file")
         temporal_df, contract_fee = _kepco.process_kepco_data(filepath, self.model_year, self.selected_sheet)
 
         # Align usage fees with snapshots
@@ -377,14 +379,21 @@ class PPAModel:
         gridinf_df = gridinf_df.loc[self.initial_year: self.end_year]
 
         # Add PPA model
-        solarpattern_df = \
-        pd.read_sql_table('solar_patterns', 'sqlite:///database/solar_patterns.db').set_index('datetime')['q99']
+        solarpattern_df = pd.read_sql_table(
+            'solar_patterns',
+            f"sqlite:///{_fileloader.get_file_path('database_path', 'solar_patterns_db')}"
+        ).set_index('datetime')['q99']
+
         solarpattern_df = solarpattern_df.loc[
             (solarpattern_df.index >= f"{self.model_year}-01-01") &
             (solarpattern_df.index <= f"{self.model_year}-12-31 23:59:59")
             ].reindex(snapshots, fill_value=0)
 
-        windpattern_df = pd.read_sql_table('wind_patterns', 'sqlite:///database/wind_patterns.db').set_index('index')
+        windpattern_df = pd.read_sql_table(
+            'wind_patterns',
+            f"sqlite:///{_fileloader.get_file_path('database_path', 'wind_patterns_db')}"
+        ).set_index('index')
+
         windpattern_df = windpattern_df.loc[
             (windpattern_df.index >= f"{self.model_year}-01-01") &
             (windpattern_df.index <= f"{self.model_year}-12-31 23:59:59")
