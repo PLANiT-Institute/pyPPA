@@ -1,28 +1,21 @@
 from setuptools import setup, find_packages
 
+# Read the requirements from requirements.txt
+with open("requirements.txt") as f:
+    requirements = f.read().splitlines()
+
 setup(
-    name='PLANiT_PPA',  # Name of your package
-    version='0.1.0',  # Initial version
-    description='A suite of utilities for cost analysis, KEPCO data processing, and solar GHI data handling.',
-    author='Ssanghyun Hong',
-    author_email='sanghyun@planit.institute',
-    url='https://github.com/PLANiT-Institute/pyPPA.git',  # Replace with your GitHub repo URL
-    packages=find_packages(include=['PLANiT_PPA', 'PLANiT_PPA.*']),  # Include the `PLANiT_PPA` directory
-    install_requires=[
-        'geopandas',
-        'pandas',
-        'numpy',
-        'tqdm',
-        'plotly',
-        'requests',
-    ],
+    name="PLANiT_PPA",  # Replace with your package name
+    version="1.0",
+    description="PPA model for South Korea, developed by Sanghyun Hong (PLANiT)",
+    author="Sanghyun Hong",  # Replace with your name or organization
+    license="GPL-3.0",
+    packages=find_packages(),  # Automatically find all packages
+    install_requires=requirements,  # Load dependencies from requirements.txt
+    python_requires=">=3.6",  # Specify the required Python version
     classifiers=[
-        'Programming Language :: Python :: 3',
-        'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
-        'Operating System :: OS Independent',
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+        "Operating System :: OS Independent",
     ],
-    python_requires='>=3.7',
 )
-
-
-
