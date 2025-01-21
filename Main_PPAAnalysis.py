@@ -224,7 +224,7 @@ def main():
         parameters_df = pd.DataFrame(parameters_summary)
         output = ppa_model.run_model()
 
-        if output is not "Infeasible":
+        if output != "Infeasible":
 
             st.subheader("Output File Selection")
             st.write(output)
