@@ -15,7 +15,7 @@ Date: 2024 Dec. 1st
 import pandas as pd
 import geopandas as gpd
 import numpy as np
-import PLANiT_PPA_utils.costutils as _cost
+import PLANiT_PPA.costutils as _cost
 
 grid = _cost.process_grid_site_data(
     buffer_distance=25000,

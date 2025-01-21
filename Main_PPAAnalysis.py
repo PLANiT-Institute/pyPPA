@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import PLANiT_PPA_utils.ppamodule as _ppa
+import PLANiT_PPA.ppamodule as _ppa
 
 import warnings
 

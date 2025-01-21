@@ -1,5 +1,5 @@
 import pandas as pd
-import PLANiT_PPA_utils.costutils as _cost
+import PLANiT_PPA.costutils as _cost
 
 # Example Usage
 file_path = './data/global_benchmark_IRENA.xlsx'

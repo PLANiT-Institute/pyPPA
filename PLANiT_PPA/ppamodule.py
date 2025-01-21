@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
-import PLANiT_PPA_utils.costutils as _cost
-import PLANiT_PPA_utils.KEPCOutils as _kepco
+import PLANiT_PPA.costutils as _cost
+import PLANiT_PPA.KEPCOutils as _kepco
 import pypsa
 
 class PPAModel:

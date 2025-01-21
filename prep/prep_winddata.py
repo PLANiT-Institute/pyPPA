@@ -2,9 +2,9 @@ import pandas as pd
 import geopandas as gpd
 import os
 import sqlite3
-import PLANiT_PPA_utils.costutils as _cost
-import PLANiT_PPA_utils.solarutils as _solar
-import PLANiT_PPA_utils.windutils as _wind
+import PLANiT_PPA.costutils as _cost
+import PLANiT_PPA.solarutils as _solar
+import PLANiT_PPA.windutils as _wind
 
 """
 Wind Data Preprocessing

@@ -1,4 +1,4 @@
-import PLANiT_PPA_utils.KEPCOutils as _kepco
+import PLANiT_PPA.KEPCOutils as _kepco
 import pandas as pd
 
 # Example usage

@@ -1,6 +1,6 @@
 # Execution
 import pandas as pd
-import PLANiT_PPA_utils.solarutils as _solar
+import PLANiT_PPA.solarutils as _solar
 import sqlite3
 """
 Import ASOS data 
