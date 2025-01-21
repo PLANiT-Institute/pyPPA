@@ -6,7 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="b551a797-c6c4-4f45-a866-3bd42b33ba27" name="Changes" comment="Streamlit User input">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Main_PPAAnalysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/Main_PPAAnalysis.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -21,6 +20,11 @@
     </option>
   </component>
   <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="semikr_ppa" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
@@ -210,6 +214,8 @@
       <workItem from="1737093170341" duration="3738000" />
       <workItem from="1737112425600" duration="535000" />
       <workItem from="1737161945646" duration="7695000" />
+      <workItem from="1737436671170" duration="113000" />
+      <workItem from="1737436789964" duration="334000" />
     </task>
     <task id="LOCAL-00001" summary="v0.0.1 - Almost there&#10;Next step to add LCOE, marginal costs">
       <option name="closed" value="true" />
@@ -510,6 +516,7 @@
     <MESSAGE value="PPA Model V0.1" />
     <MESSAGE value="User input" />
     <MESSAGE value="Steamlit User input" />
+    <MESSAGE value="v1.0" />
     <MESSAGE value="Streamlit User input" />
     <option name="LAST_COMMIT_MESSAGE" value="Streamlit User input" />
   </component>
