@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 import PLANiT_PPA.costutils as _cost
 import PLANiT_PPA.KEPCOutils as _kepco
-import PLANiT_PPA.fileloader as _fileloader
 import pypsa
 
 class PPAModel:
@@ -60,7 +59,7 @@ class PPAModel:
         self.model_year = model_year
         self.rec_increase = rec_increase
         self.smp_increase = smp_increase
-
+        self.discount_rate = default_params['discount_rate']
         # Internal modeling parameters
         self.default_params = default_params
         self.battery_parameters = battery_parameters
@@ -72,12 +71,13 @@ class PPAModel:
         Everything after the ### From here to the end ### comment goes here.
         """
 
+        print("\n\n\n ========== PPA Calulcation Starts ========== \n\n\n")
+
+
         print("Calculate PV CAPEX")
 
         # Read grid data
-        # gridinf_df = pd.read_csv("database/grid.csv", index_col=0)
-
-        gridinf_df = pd.read_csv(_fileloader.get_file_path("database_path", "grid_file"), index_col=0)
+        gridinf_df = pd.read_csv("database/grid.csv", index_col=0)
 
         solar_capex_df = gridinf_df['solar_capex']
         wind_capex_df = gridinf_df['wind_capex']
@@ -111,7 +111,8 @@ class PPAModel:
         # Carbon price
         if self.carbonprice_init == 'NGFS':
             carbonprice_grid = _cost.process_and_interpolate_annual_data(
-                _fileloader.get_file_path("database_path", "carbonprice_file"), "Net Zero 2050"
+                'database/NGFS_carbonprice.xlsx',
+                'Net Zero 2050'
             ).loc[self.model_year:self.end_year]
             carbonprice_grid *= self.currency_exchange  # KRW/kgCO2
         else:
@@ -156,10 +157,10 @@ class PPAModel:
 
         # Process Grid
         grid = _cost.process_grid_site_data(
-            buffer_distance=self.default_params["buffer"],
-            site_path=_fileloader.get_file_path("gisdata_path", "cluster_file"),
-            grid_path=_fileloader.get_file_path("gisdata_path", "db_semippa_file"),
-            output_path=_fileloader.get_file_path("gisdata_path", "grid_buffer_file")
+            buffer_distance=self.default_params['buffer'],
+            site_path="gisdata/clusterpolygon.gpkg",
+            grid_path="gisdata/db_semippa.gpkg",
+            output_path="gisdata/grids_within_modified_buffer.gpkg"
         )
 
         # Analyze PV Costs
@@ -195,14 +196,13 @@ class PPAModel:
         # OPEX, lifetime, and discount rate
         opex_rate = 0.025
         lifetime = 20
-        discount_rate = 0.025
 
         pv_stats['LCOE'] = _cost.annualise_capital_cost(
             capacity_factors.loc[self.model_year].astype(float).value,
             pv_stats['max_cost'],
             pv_stats['max_cost'] / pv_stats['bin_capacity_gw'] / 1000 * opex_rate,
             lifetime,
-            discount_rate,
+            discount_rate = self.discount_rate,
             rec_cost=rec_ren,
             min_smp=smp_grid,
             plot=False
@@ -213,7 +213,7 @@ class PPAModel:
             agri_stats['max_cost'],
             agri_stats['max_cost'] / agri_stats['bin_capacity_gw'] / 1000 * opex_rate,
             lifetime,
-            discount_rate,
+            discount_rate = self.discount_rate,
             rec_cost=rec_ren,
             min_smp=smp_grid,
             plot=False
@@ -229,7 +229,7 @@ class PPAModel:
         """
         Import Wind Data
         """
-        wind_df = pd.read_excel(_fileloader.get_file_path("database_path", "wind_grid_file"), index_col=0)
+        wind_df = pd.read_excel('database/wind_grid.xlsx', index_col=0)
         wind_df.dropna(subset=['admin_boundaries'], inplace=True)
         wind_df = wind_df[wind_df['admin_boundaries'].str.contains('인천광역시|인천 광역시|경기도|충청남도')]
         wind_df = wind_df[wind_df['DT_m'] <= self.default_params['max_distace']]
@@ -318,7 +318,7 @@ class PPAModel:
         )
 
         # Process KEPCO data
-        filepath = _fileloader.get_file_path("database_path", "kepco_file")
+        filepath = "database/KEPCO.xlsx"
         temporal_df, contract_fee = _kepco.process_kepco_data(filepath, self.model_year, self.selected_sheet)
 
         # Align usage fees with snapshots
@@ -379,25 +379,21 @@ class PPAModel:
         gridinf_df = gridinf_df.loc[self.initial_year: self.end_year]
 
         # Add PPA model
-        solarpattern_df = pd.read_sql_table(
-            'solar_patterns',
-            f"sqlite:///{_fileloader.get_file_path('database_path', 'solar_patterns_db')}"
-        ).set_index('datetime')['q99']
-
+        solarpattern_df = \
+        pd.read_sql_table('solar_patterns', 'sqlite:///database/solar_patterns.db').set_index('datetime')['q99']
         solarpattern_df = solarpattern_df.loc[
             (solarpattern_df.index >= f"{self.model_year}-01-01") &
             (solarpattern_df.index <= f"{self.model_year}-12-31 23:59:59")
             ].reindex(snapshots, fill_value=0)
 
-        windpattern_df = pd.read_sql_table(
-            'wind_patterns',
-            f"sqlite:///{_fileloader.get_file_path('database_path', 'wind_patterns_db')}"
-        ).set_index('index')
-
+        windpattern_df = pd.read_sql_table('wind_patterns', 'sqlite:///database/wind_patterns.db').set_index('index')
         windpattern_df = windpattern_df.loc[
             (windpattern_df.index >= f"{self.model_year}-01-01") &
             (windpattern_df.index <= f"{self.model_year}-12-31 23:59:59")
             ].reindex(snapshots, fill_value=0)
+
+        # Add a curtailment bus to track curtailed energy
+        network.add("Bus", "curtailment_bus", carrier="curtailment")
 
         for i, row in cost_df.iterrows():
 
@@ -436,6 +432,16 @@ class PPAModel:
                 lifetime=20,
                 marginal_cost=row['LCOE'],
                 p_max_pu=p_max_pu
+            )
+
+            # Add a curtailment link for tracking curtailed energy
+            network.add(
+                "Link",
+                f"curtailment_{generator_name}",
+                bus0="one_bus",  # Energy flows from one_bus
+                bus1="curtailment_bus",  # Energy gets dumped in curtailment bus
+                p_nom_extendable=True,  # Allow curtailment to scale as needed
+                efficiency=1.0  # No energy loss in curtailment
             )
 
             # Redefine if self_max_grid_share is True
@@ -572,6 +578,27 @@ class PPAModel:
                 index=range(self.model_year, self.model_year + (analysis_period + 1))
             )
 
+            # Extract actual generation from results
+            actual_generation = network.generators_t.p
+
+            # Extract curtailment power flow
+            curtailment_flows = network.links_t.p1.filter(like="curtailment_")
+
+            # Summarize results for each carrier
+            effective_generation = actual_generation.groupby(network.generators.carrier, axis=1).sum()
+            curtailed_generation = curtailment_flows.groupby(network.links.carrier, axis=1).sum()
+
+            # Display results
+            print("\nEffective Generation (MWh):")
+            print(effective_generation.sum())
+
+            print("\nCurtailed Generation (MWh):")
+            print(curtailed_generation.sum())
+
+            # Store results in output_analysis for further use
+            output_analysis["effective generation (MWh)"] = effective_generation
+            output_analysis["curtailed generation (MWh)"] = curtailed_generation
+
             # Generation share
             output_analysis["share (%)"] = output_analysis['generation (GWh)'].div(
                 output_analysis['generation (GWh)'].sum(axis=1), axis=0
@@ -676,10 +703,10 @@ class PPAModel:
                     output_analysis["carbon price (KRW)"]
             )
 
-            print(f"Total payment (Billion KRW in {self.model_year}):")
+            print(f"Total payment without Battery (Billion KRW in {self.model_year}):")
             print(output_analysis["total payment (KRW)"].iloc[0] / 1e9)
 
-            print(f"Payment (KRW/MWh in {self.model_year}):")
+            print(f"Payment without Battery (KRW/MWh in {self.model_year}):")
             print(output_analysis["total payment (KRW)"].iloc[0] / output_analysis['generation (GWh)'].loc[
                 self.model_year].sum() / 1000)
 
@@ -688,6 +715,39 @@ class PPAModel:
             non_zero_generation = generation_by_carrier.loc[:, generation_by_carrier.sum() > 0]
 
             output_analysis["generation by carrier (MWh)"] = generation_by_carrier
+
+            if self.battery_parameters['include']:
+                # Get optimized battery capacity (MW)
+                battery_capacity = network.storage_units.at["Battery", "p_nom_opt"]
+
+                # Compute total capital cost of battery (KRW)
+                battery_capital_cost = battery_capacity * self.battery_parameters["capital_cost_per_mw"]
+
+                # Define discount rate and lifetime for levelized cost calculation
+                discount_rate = self.default_params["discount_rate"]
+                battery_lifetime = self.battery_parameters["lifespan"]
+
+                # Compute annuity factor for levelized cost
+                annuity_factor = discount_rate / (1 - (1 + discount_rate) ** -battery_lifetime)
+
+                # Compute annualized battery cost (KRW per year)
+                annualized_battery_cost = battery_capital_cost * annuity_factor
+
+                # Store result in output_analysis for all years in the modeling period
+                years = range(self.model_year, self.end_year + 1)
+
+                output_analysis["battery capacity (MW)"] = pd.Series(battery_capacity, index=years)
+                output_analysis["battery annualized cost (KRW) per year"] = pd.Series(annualized_battery_cost,
+                                                                                      index=years)
+
+                # Print result
+                print(f"\nBattery Capacity (MW): {battery_capacity:.2f}")
+                print(f"Battery Annualized Cost (KRW per Year): {annualized_battery_cost:.2f}")
+
+            # Ensure all output_analysis DataFrames have 'year' as index name if it's empty
+            for key, df in output_analysis.items():
+                if isinstance(df, pd.DataFrame) and df.index.name is None:
+                    df.index.name = "year"
 
         else:
             output_analysis = "Infeasible"
