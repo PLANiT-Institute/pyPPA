@@ -59,7 +59,7 @@ class PPAModel:
         self.model_year = model_year
         self.rec_increase = rec_increase
         self.smp_increase = smp_increase
-
+        self.discount_rate = default_params['discount_rate']
         # Internal modeling parameters
         self.default_params = default_params
         self.battery_parameters = battery_parameters
@@ -70,6 +70,9 @@ class PPAModel:
         Execute the entire PPA model.
         Everything after the ### From here to the end ### comment goes here.
         """
+
+        print("\n\n\n ========== PPA Calulcation Starts ========== \n\n\n")
+
 
         print("Calculate PV CAPEX")
 
@@ -193,14 +196,13 @@ class PPAModel:
         # OPEX, lifetime, and discount rate
         opex_rate = 0.025
         lifetime = 20
-        discount_rate = 0.025
 
         pv_stats['LCOE'] = _cost.annualise_capital_cost(
             capacity_factors.loc[self.model_year].astype(float).value,
             pv_stats['max_cost'],
             pv_stats['max_cost'] / pv_stats['bin_capacity_gw'] / 1000 * opex_rate,
             lifetime,
-            discount_rate,
+            discount_rate = self.discount_rate,
             rec_cost=rec_ren,
             min_smp=smp_grid,
             plot=False
@@ -211,7 +213,7 @@ class PPAModel:
             agri_stats['max_cost'],
             agri_stats['max_cost'] / agri_stats['bin_capacity_gw'] / 1000 * opex_rate,
             lifetime,
-            discount_rate,
+            discount_rate = self.discount_rate,
             rec_cost=rec_ren,
             min_smp=smp_grid,
             plot=False
@@ -390,6 +392,9 @@ class PPAModel:
             (windpattern_df.index <= f"{self.model_year}-12-31 23:59:59")
             ].reindex(snapshots, fill_value=0)
 
+        # Add a curtailment bus to track curtailed energy
+        network.add("Bus", "curtailment_bus", carrier="curtailment")
+
         for i, row in cost_df.iterrows():
 
             generator_name = f"{row['type']}_{i}"
@@ -427,6 +432,16 @@ class PPAModel:
                 lifetime=20,
                 marginal_cost=row['LCOE'],
                 p_max_pu=p_max_pu
+            )
+
+            # Add a curtailment link for tracking curtailed energy
+            network.add(
+                "Link",
+                f"curtailment_{generator_name}",
+                bus0="one_bus",  # Energy flows from one_bus
+                bus1="curtailment_bus",  # Energy gets dumped in curtailment bus
+                p_nom_extendable=True,  # Allow curtailment to scale as needed
+                efficiency=1.0  # No energy loss in curtailment
             )
 
             # Redefine if self_max_grid_share is True
@@ -563,6 +578,27 @@ class PPAModel:
                 index=range(self.model_year, self.model_year + (analysis_period + 1))
             )
 
+            # Extract actual generation from results
+            actual_generation = network.generators_t.p
+
+            # Extract curtailment power flow
+            curtailment_flows = network.links_t.p1.filter(like="curtailment_")
+
+            # Summarize results for each carrier
+            effective_generation = actual_generation.groupby(network.generators.carrier, axis=1).sum()
+            curtailed_generation = curtailment_flows.groupby(network.links.carrier, axis=1).sum()
+
+            # Display results
+            print("\nEffective Generation (MWh):")
+            print(effective_generation.sum())
+
+            print("\nCurtailed Generation (MWh):")
+            print(curtailed_generation.sum())
+
+            # Store results in output_analysis for further use
+            output_analysis["effective generation (MWh)"] = effective_generation
+            output_analysis["curtailed generation (MWh)"] = curtailed_generation
+
             # Generation share
             output_analysis["share (%)"] = output_analysis['generation (GWh)'].div(
                 output_analysis['generation (GWh)'].sum(axis=1), axis=0
@@ -667,10 +703,10 @@ class PPAModel:
                     output_analysis["carbon price (KRW)"]
             )
 
-            print(f"Total payment (Billion KRW in {self.model_year}):")
+            print(f"Total payment without Battery (Billion KRW in {self.model_year}):")
             print(output_analysis["total payment (KRW)"].iloc[0] / 1e9)
 
-            print(f"Payment (KRW/MWh in {self.model_year}):")
+            print(f"Payment without Battery (KRW/MWh in {self.model_year}):")
             print(output_analysis["total payment (KRW)"].iloc[0] / output_analysis['generation (GWh)'].loc[
                 self.model_year].sum() / 1000)
 
@@ -679,6 +715,39 @@ class PPAModel:
             non_zero_generation = generation_by_carrier.loc[:, generation_by_carrier.sum() > 0]
 
             output_analysis["generation by carrier (MWh)"] = generation_by_carrier
+
+            if self.battery_parameters['include']:
+                # Get optimized battery capacity (MW)
+                battery_capacity = network.storage_units.at["Battery", "p_nom_opt"]
+
+                # Compute total capital cost of battery (KRW)
+                battery_capital_cost = battery_capacity * self.battery_parameters["capital_cost_per_mw"]
+
+                # Define discount rate and lifetime for levelized cost calculation
+                discount_rate = self.default_params["discount_rate"]
+                battery_lifetime = self.battery_parameters["lifespan"]
+
+                # Compute annuity factor for levelized cost
+                annuity_factor = discount_rate / (1 - (1 + discount_rate) ** -battery_lifetime)
+
+                # Compute annualized battery cost (KRW per year)
+                annualized_battery_cost = battery_capital_cost * annuity_factor
+
+                # Store result in output_analysis for all years in the modeling period
+                years = range(self.model_year, self.end_year + 1)
+
+                output_analysis["battery capacity (MW)"] = pd.Series(battery_capacity, index=years)
+                output_analysis["battery annualized cost (KRW) per year"] = pd.Series(annualized_battery_cost,
+                                                                                      index=years)
+
+                # Print result
+                print(f"\nBattery Capacity (MW): {battery_capacity:.2f}")
+                print(f"Battery Annualized Cost (KRW per Year): {annualized_battery_cost:.2f}")
+
+            # Ensure all output_analysis DataFrames have 'year' as index name if it's empty
+            for key, df in output_analysis.items():
+                if isinstance(df, pd.DataFrame) and df.index.name is None:
+                    df.index.name = "year"
 
         else:
             output_analysis = "Infeasible"
