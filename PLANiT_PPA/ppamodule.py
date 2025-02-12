@@ -481,7 +481,7 @@ class PPAModel:
                 bus="one_bus",
                 carrier="battery",
                 capital_cost=self.battery_parameters["capital_cost_per_mw"],
-                marginal_cost=10,
+                marginal_cost=0,
                 max_hours=self.battery_parameters["max_hours"],
                 efficiency_store=self.battery_parameters["efficiency_store"],
                 efficiency_dispatch=self.battery_parameters["efficiency_dispatch"],
@@ -734,10 +734,11 @@ class PPAModel:
                 annualized_battery_cost = battery_capital_cost * annuity_factor
 
                 years = range(self.model_year, self.end_year + 1)
-                output_analysis["battery capacity (MW)"] = pd.Series(battery_capacity, index=years)
-                output_analysis["battery annualized cost (KRW/y)"] = pd.Series(annualized_battery_cost, index=years)
+                output_analysis["ESS capacity (MW)"] = pd.Series(battery_capacity, index=years)
+                output_analysis["ESS cost (KRW/y)"] = pd.Series(annualized_battery_cost,
+                                                                                      index=years)
 
-                # -------- Retrieve battery charge/discharge --------
+                # -------- New lines to retrieve battery charge/discharge --------
                 battery_p = network.storage_units_t.p["Battery"]
                 battery_discharge_hourly = battery_p.clip(lower=0)
                 battery_charge_hourly = battery_p.clip(upper=0).abs()
@@ -745,33 +746,18 @@ class PPAModel:
                 battery_discharge_annual = battery_discharge_hourly.sum()
                 battery_charge_annual = battery_charge_hourly.sum()
 
-                # Existing prints
+                # Save into output_analysis
+                output_analysis["ESS discharge (hourly)"] = battery_discharge_hourly
+                output_analysis["ESS charge (hourly)"] = battery_charge_hourly
+                output_analysis["ESS discharge (MWh) annual"] = battery_discharge_annual
+                output_analysis["ESS charge (MWh) annual"] = battery_charge_annual
+
                 print("\nHourly battery discharge (MW) head:")
                 print(battery_discharge_hourly.head())
                 print("\nHourly battery charge (MW) head:")
                 print(battery_charge_hourly.head())
                 print(f"\nTotal battery discharge over the year (MWh): {battery_discharge_annual:.2f}")
                 print(f"Total battery charge over the year (MWh): {battery_charge_annual:.2f}")
-
-                # -------- Store annual results in 'year'/'value' format --------
-
-                # 1) Discharge
-                discharge_annual_df = pd.DataFrame({
-                    "year": [self.model_year],  # The year you solved
-                    "value": [battery_discharge_annual]
-                })
-                discharge_annual_df.index.name = None  # To keep it clean if you like
-
-                # 2) Charge
-                charge_annual_df = pd.DataFrame({
-                    "year": [self.model_year],
-                    "value": [battery_charge_annual]
-                })
-                charge_annual_df.index.name = None
-
-                # Put these DataFrames into your output_analysis dictionary
-                output_analysis["annual discharge (MWh)"] = discharge_annual_df
-                output_analysis["annual charge (MWh)"] = charge_annual_df
 
             # Ensure all output_analysis DataFrames have 'year' as index name if it's empty
             for key, df in output_analysis.items():
