@@ -734,8 +734,8 @@ class PPAModel:
                 annualized_battery_cost = battery_capital_cost * annuity_factor
 
                 years = range(self.model_year, self.end_year + 1)
-                output_analysis["battery capacity (MW)"] = pd.Series(battery_capacity, index=years)
-                output_analysis["battery annualized cost (KRW/y)"] = pd.Series(annualized_battery_cost, index=years)
+                output_analysis["ESS capacity (MW)"] = pd.Series(battery_capacity, index=years)
+                output_analysis["ESS annualized cost (KRW per y)"] = pd.Series(annualized_battery_cost, index=years)
 
                 # -------- Retrieve battery charge/discharge --------
                 battery_p = network.storage_units_t.p["Battery"]
@@ -746,26 +746,26 @@ class PPAModel:
                 battery_charge_annual = battery_charge_hourly.sum()
 
                 # Existing prints
-                print("\nHourly battery discharge (MW) head:")
+                print("\nHourly ESS discharge (MW) head:")
                 print(battery_discharge_hourly.head())
-                print("\nHourly battery charge (MW) head:")
+                print("\nHourly ESS charge (MW) head:")
                 print(battery_charge_hourly.head())
-                print(f"\nTotal battery discharge over the year (MWh): {battery_discharge_annual:.2f}")
-                print(f"Total battery charge over the year (MWh): {battery_charge_annual:.2f}")
+                print(f"\nTotal ESS discharge (MWh): {battery_discharge_annual:.2f}")
+                print(f"Total ESS charge (MWh): {battery_charge_annual:.2f}")
 
                 # -------- Store annual results in 'year'/'value' format --------
 
                 # 1) Discharge
                 discharge_annual_df = pd.DataFrame({
                     "year": [self.model_year],  # The year you solved
-                    "value": [battery_discharge_annual]
+                    "Value": [battery_discharge_annual]
                 })
                 discharge_annual_df.index.name = None  # To keep it clean if you like
 
                 # 2) Charge
                 charge_annual_df = pd.DataFrame({
                     "year": [self.model_year],
-                    "value": [battery_charge_annual]
+                    "Value": [battery_charge_annual]
                 })
                 charge_annual_df.index.name = None
 
