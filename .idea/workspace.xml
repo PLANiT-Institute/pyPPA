@@ -4,7 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b551a797-c6c4-4f45-a866-3bd42b33ba27" name="Changes" comment="PIP Versoin">
+    <list default="true" id="b551a797-c6c4-4f45-a866-3bd42b33ba27" name="Changes" comment="Battery update">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/PLANiT_PPA/ppamodule.py" beforeDir="false" afterPath="$PROJECT_DIR$/PLANiT_PPA/ppamodule.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -514,7 +515,15 @@
       <option name="project" value="LOCAL" />
       <updated>1737438969676</updated>
     </task>
-    <option name="localTasksCounter" value="38" />
+    <task id="LOCAL-00038" summary="Battery update">
+      <option name="closed" value="true" />
+      <created>1739345372969</created>
+      <option name="number" value="00038" />
+      <option name="presentableId" value="LOCAL-00038" />
+      <option name="project" value="LOCAL" />
+      <updated>1739345372969</updated>
+    </task>
+    <option name="localTasksCounter" value="39" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -552,6 +561,7 @@
     <MESSAGE value="v1.0" />
     <MESSAGE value="Streamlit User input" />
     <MESSAGE value="PIP Versoin" />
-    <option name="LAST_COMMIT_MESSAGE" value="PIP Versoin" />
+    <MESSAGE value="Battery update" />
+    <option name="LAST_COMMIT_MESSAGE" value="Battery update" />
   </component>
 </project>

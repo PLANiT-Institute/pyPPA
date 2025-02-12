@@ -481,7 +481,7 @@ class PPAModel:
                 bus="one_bus",
                 carrier="battery",
                 capital_cost=self.battery_parameters["capital_cost_per_mw"],
-                marginal_cost=0,
+                marginal_cost=10,
                 max_hours=self.battery_parameters["max_hours"],
                 efficiency_store=self.battery_parameters["efficiency_store"],
                 efficiency_dispatch=self.battery_parameters["efficiency_dispatch"],
