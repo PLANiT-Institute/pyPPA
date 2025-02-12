@@ -727,22 +727,37 @@ class PPAModel:
                 discount_rate = self.default_params["discount_rate"]
                 battery_lifetime = self.battery_parameters["lifespan"]
 
-                # Compute annuity factor for levelized cost
+                # Compute annuity factor
                 annuity_factor = discount_rate / (1 - (1 + discount_rate) ** -battery_lifetime)
 
                 # Compute annualized battery cost (KRW per year)
                 annualized_battery_cost = battery_capital_cost * annuity_factor
 
-                # Store result in output_analysis for all years in the modeling period
                 years = range(self.model_year, self.end_year + 1)
-
                 output_analysis["battery capacity (MW)"] = pd.Series(battery_capacity, index=years)
                 output_analysis["battery annualized cost (KRW) per year"] = pd.Series(annualized_battery_cost,
                                                                                       index=years)
 
-                # Print result
-                print(f"\nBattery Capacity (MW): {battery_capacity:.2f}")
-                print(f"Battery Annualized Cost (KRW per Year): {annualized_battery_cost:.2f}")
+                # -------- New lines to retrieve battery charge/discharge --------
+                battery_p = network.storage_units_t.p["Battery"]
+                battery_discharge_hourly = battery_p.clip(lower=0)
+                battery_charge_hourly = battery_p.clip(upper=0).abs()
+
+                battery_discharge_annual = battery_discharge_hourly.sum()
+                battery_charge_annual = battery_charge_hourly.sum()
+
+                # Save into output_analysis
+                output_analysis["battery discharge (hourly)"] = battery_discharge_hourly
+                output_analysis["battery charge (hourly)"] = battery_charge_hourly
+                output_analysis["battery discharge (MWh) annual"] = battery_discharge_annual
+                output_analysis["battery charge (MWh) annual"] = battery_charge_annual
+
+                print("\nHourly battery discharge (MW) head:")
+                print(battery_discharge_hourly.head())
+                print("\nHourly battery charge (MW) head:")
+                print(battery_charge_hourly.head())
+                print(f"\nTotal battery discharge over the year (MWh): {battery_discharge_annual:.2f}")
+                print(f"Total battery charge over the year (MWh): {battery_charge_annual:.2f}")
 
             # Ensure all output_analysis DataFrames have 'year' as index name if it's empty
             for key, df in output_analysis.items():

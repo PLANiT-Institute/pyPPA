@@ -5,7 +5,6 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b551a797-c6c4-4f45-a866-3bd42b33ba27" name="Changes" comment="PIP Versoin">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/PLANiT_PPA/ppamodule.py" beforeDir="false" afterPath="$PROJECT_DIR$/PLANiT_PPA/ppamodule.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
