@@ -488,20 +488,23 @@ def main():
         else:
             st.info("Running analysis...")
             analysis = _analyse.PPAAnalysis(input_directory, discount_rate=0.05)
-            merged_total, npv_df = analysis.run()
+            merged_results, merged_total, npv_df = analysis.run()
 
-            # Optionally, save merged_total to an Excel file
+            # Save all merged_results (each sheet), merged_total, and npv_df to an Excel file
             merged_output_path = os.path.join(input_directory, "merged_results.xlsx")
             with pd.ExcelWriter(merged_output_path, engine="openpyxl") as writer:
+                # Save the merged total and NPV analysis
                 merged_total.to_excel(writer, sheet_name="Merged Total", index=False)
                 npv_df.to_excel(writer, sheet_name="NPV Analysis", index=False)
 
-            # Display results in Streamlit
+                # Save each sheet in merged_results
+                for sheet_name, df in merged_results.items():
+                    df.to_excel(writer, sheet_name=sheet_name, index=False)
+
             st.subheader("Merged Total Data")
             st.dataframe(merged_total)
             st.subheader("NPV Analysis")
             st.dataframe(npv_df)
-
             st.success(f"Analysis completed! Results saved to: {merged_output_path}")
             st.markdown(f"[Download Merged Results](sandbox://{merged_output_path})")
 

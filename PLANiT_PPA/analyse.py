@@ -1,4 +1,7 @@
+import os
 import pandas as pd
+import streamlit as st
+
 
 class PPAAnalysis:
     def __init__(self, input_directory, discount_rate=0.05):
@@ -7,6 +10,48 @@ class PPAAnalysis:
         """
         self.input_directory = input_directory
         self.discount_rate = discount_rate
+
+    def run_analysis(self):
+        """
+        Reads Excel files, extracts scenario details, and merges data by Scenario Group and Scenario.
+        Returns a dictionary of merged DataFrames per sheet.
+        """
+        files = [f for f in os.listdir(self.input_directory) if f.endswith(".xlsx")]
+        sheets_dict = {}
+
+        for file in files:
+            filepath = os.path.join(self.input_directory, file)
+            # Extract scenario group and scenario name
+            if "_" in file:
+                scenario_group, scenario = file.split("_", 1)
+            else:
+                scenario_group, scenario = file.split(".")[0], "REF"
+            scenario = scenario.replace(".xlsx", "")
+            xls = pd.ExcelFile(filepath)
+
+            for sheet_name in xls.sheet_names:
+                df = pd.read_excel(xls, sheet_name=sheet_name)
+                # Ensure "Scenario Group" and "Scenario" columns exist before inserting
+                if "Scenario Group" not in df.columns:
+                    df.insert(0, "Scenario Group", scenario_group)
+                if "Scenario" not in df.columns:
+                    df.insert(1, "Scenario", scenario)
+                # Rename unnamed numeric columns to 'year'
+                df.columns = [col if not str(col).startswith("Unnamed") else "year" for col in df.columns]
+                # Ensure required column "Value" exists
+                if "Value" not in df.columns:
+                    numeric_cols = df.select_dtypes(include="number").columns.tolist()
+                    if "year" in numeric_cols:
+                        numeric_cols.remove("year")
+                    if numeric_cols:
+                        df["Value"] = df[numeric_cols].sum(axis=1)
+                    else:
+                        continue
+                # Store data for merging later
+                sheets_dict.setdefault(sheet_name, []).append(df)
+
+        merged_sheets = {sheet: pd.concat(data, ignore_index=True) for sheet, data in sheets_dict.items()}
+        return merged_sheets
 
     @staticmethod
     def calculate_npv(group, col, discount_rate):
@@ -22,17 +67,17 @@ class PPAAnalysis:
     def run(self):
         """
         Runs the analysis:
-          1. Uses _analyse.run_analysis to merge Excel files.
-          2. Creates a merged_total DataFrame from key sheets.
-          3. Calculates additional columns (Total Cost and Cost per MWh).
-          4. Groups data and computes NPVs.
+          1. Merges Excel files using run_analysis().
+          2. Processes key sheets (marginal cost, rec payment, ESS annualized cost, generation).
+          3. Merges these side by side into merged_total.
+          4. Calculates additional columns (Total Cost and Cost per MWh).
+          5. Groups data by Scenario Group and Scenario to compute NPVs.
 
         Returns:
           merged_total: DataFrame with merged totals.
           npv_df: DataFrame with NPVs by scenario.
         """
-        # Run analysis using the _analyse module
-        merged_results = _analyse.run_analysis(self.input_directory)
+        merged_results = self.run_analysis()
 
         # Create copies of the relevant dataframes
         cost_df = merged_results["marginal cost (KRW)"].copy()
@@ -56,34 +101,39 @@ class PPAAnalysis:
         merged_total = cost_df.merge(rec_df, on=["Scenario Group", "Scenario", "year"], how="outer") \
             .merge(ess_df, on=["Scenario Group", "Scenario", "year"], how="outer") \
             .merge(gen_df, on=["Scenario Group", "Scenario", "year"], how="outer")
-
-        # Replace NaN values with 0
         merged_total.fillna(0, inplace=True)
 
         # Calculate additional columns
         merged_total['Total Cost (KRW)'] = (merged_total['Cost (KRW)'] +
                                             merged_total['REC (KRW)'] +
                                             merged_total['ESS (KRW)'])
-        merged_total['Cost (KRW/MWh)'] = merged_total['Total Cost (KRW)'] / merged_total['Generation (GWh)'] / 1e3
+        merged_total['Cost (KRW/MWh)'] = merged_total['Cost (KRW)']/merged_total['Generation (GWh)']/1e3
+        merged_total['REC (KRW/MWh)'] = merged_total['REC (KRW)']/merged_total['Generation (GWh)']/1e3
+        merged_total['ESS (KRW/MWh'] = merged_total['ESS (KRW)']/merged_total['Generation (GWh)']/1e3
+        merged_total['Total Cost (KRW/MWh)'] = merged_total['Total Cost (KRW)'] / merged_total['Generation (GWh)'] / 1e3
 
         # List the columns for which to calculate NPV
         npv_columns = ["Cost (KRW)", "REC (KRW)", "ESS (KRW)", "Generation (GWh)", "Total Cost (KRW)"]
 
-        # Group merged_total by "Scenario Group" and "Scenario" and calculate NPVs
         npv_df_list = []
         grouped = merged_total.groupby(["Scenario Group", "Scenario"])
         for (scenario_group, scenario), group in grouped:
             npv_values = {"Scenario Group": scenario_group, "Scenario": scenario}
             for col in npv_columns:
-                npv_values[col + " NPV"] = self.calculate_npv(group, col, self.discount_rate)
-            # Also calculate the derived cost per MWh NPV
-            gen_npv = npv_values.get("Generation (GWh) NPV", None)
-            tot_npv = npv_values.get("Total Cost (KRW) NPV", None)
-            if gen_npv is not None and gen_npv != 0:
-                npv_values["Cost (KRW/MWh) NPV"] = tot_npv / (gen_npv * 1e3)
-            else:
-                npv_values["Cost (KRW/MWh) NPV"] = 0
+                npv_values[col] = self.calculate_npv(group, col, self.discount_rate)
+            # Derived Cost (KRW/MWh) NPV
+            cost_npv = npv_values["Cost (KRW)"]
+            rec_npv = npv_values["REC (KRW)"]
+            ess_npv = npv_values["ESS (KRW)"]
+            gen_npv = npv_values.get("Generation (GWh)", None)
+            tot_npv = npv_values.get("Total Cost (KRW)", None)
+
+            npv_values['Cost (KRW/MWh)'] = cost_npv / (gen_npv * 1e3)
+            npv_values['REC (KRW/MWh)'] = rec_npv / (gen_npv * 1e3)
+            npv_values['ESS (KRW/MWh)'] = ess_npv / (gen_npv * 1e3)
+            npv_values["Total Cost (KRW/MWh)"] = tot_npv / (gen_npv * 1e3)
+
             npv_df_list.append(npv_values)
         npv_df = pd.DataFrame(npv_df_list)
 
-        return merged_total, npv_df
+        return merged_results, merged_total, npv_df

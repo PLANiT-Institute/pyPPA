@@ -563,6 +563,24 @@ class PPAModel:
             print("Details of generators with positive dispatch:")
             print(active_generators.columns.tolist())
 
+            # Calculate generation by generator
+            generation_by_generator = network.generators_t.p.loc[:, active_generators.columns].sum()
+            output_analysis["generation by generator (MWh)"] = generation_by_generator
+
+            print("\nGeneration by Generator (MWh):")
+            print(generation_by_generator)
+
+            # Group generation
+            generation_by_carrier = network.generators_t.p.groupby(network.generators.carrier, axis=1).sum()
+            print("\nGeneration by Carrier (GWh):")
+            print(generation_by_carrier.sum() / 1000)
+            total_generation_by_carrier = generation_by_carrier.sum() / 1000
+
+            output_analysis["generation (GWh)"] = pd.DataFrame(
+                [total_generation_by_carrier] * (analysis_period + 1),
+                index=range(self.model_year, self.model_year + (analysis_period + 1))
+            )
+
             # Group by carrier and sum capacity
             total_capacity_by_carrier = network.generators.groupby("carrier")["p_nom_opt"].sum()
             output_analysis["capacity (MW)"] = pd.DataFrame(
@@ -606,24 +624,6 @@ class PPAModel:
             active_capacity_by_carrier = network.generators.loc[active_generators.columns].groupby("carrier")[
                 "p_nom_opt"].sum()
             output_analysis["active capacity by carrier (MW)"] = active_capacity_by_carrier
-
-            # Calculate generation by generator
-            generation_by_generator = network.generators_t.p.loc[:, active_generators.columns].sum()
-            output_analysis["generation by generator (MWh)"] = generation_by_generator
-
-            print("\nGeneration by Generator (MWh):")
-            print(generation_by_generator)
-
-            # Group generation
-            generation_by_carrier = network.generators_t.p.groupby(network.generators.carrier, axis=1).sum()
-            print("\nGeneration by Carrier (GWh):")
-            print(generation_by_carrier.sum() / 1000)
-            total_generation_by_carrier = generation_by_carrier.sum() / 1000
-
-            output_analysis["generation (GWh)"] = pd.DataFrame(
-                [total_generation_by_carrier] * (analysis_period + 1),
-                index=range(self.model_year, self.model_year + (analysis_period + 1))
-            )
 
             # Calculate active capacity factor
             active_capacity_factor_by_generator = generation_by_generator / (
