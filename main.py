@@ -5,6 +5,7 @@
 import streamlit as st
 import pandas as pd
 import PLANiT_PPA.ppamodule as _ppa
+import PLANiT_PPA.analyse as _analyse
 import warnings
 import os
 
@@ -116,6 +117,7 @@ def run_scenario(scenario, scenario_defaults, base_output_path):
     # Default Parameters (hardcoded keys 'digits' and 'dist_cols' remain as before)
     default_params = {
         'discount_rate': get_float(scenario_defaults, "Discount Rate (%)", 0.05),
+        'irr': get_float(scenario_defaults, "Internal Rate of Return (%)", 0.05),
         'buffer': get_int(scenario_defaults, "Buffer (m)", 25000),
         'bin_size': get_int(scenario_defaults, "Bin Size", 1),
         'min_capacity': get_float(scenario_defaults, "Minimum Capacity (MW)", 0.1),
@@ -299,7 +301,9 @@ def main():
 
     with col1:
         run_model = st.button("Run PPA Model")
+
     with col2:
+
         run_all = st.button("Run All Scenarios")
     with col3:
         # --- Reload CSV button ---
@@ -440,10 +444,14 @@ def main():
             'discount_rate': st.number_input("Discount Rate (%)", min_value=0.0, max_value=1.0,
                                              value=float(defaults.get("Discount Rate (%)", 0.05)), step=0.001),
 
+            'irr': st.number_input("Internal Rate of Return (%)", min_value=0.0, max_value=1.0,
+                                             value=float(defaults.get("Discount Rate (%)", 0.05)), step=0.001),
+
+
             'buffer': st.number_input("Buffer (m)", min_value=0,
                                       value=int(defaults.get("Buffer (m)", 25000)), step=1000),
-            'bin_size': st.number_input("Bin Size", min_value=0,
-                                        value=int(defaults.get("Bin Size", 1)), step=1),
+            'bin_size': st.number_input("Bin Size (GW)", min_value=0.0,
+                                        value=float(defaults.get("Bin Size", 1)), step=0.01),
             'min_capacity': st.number_input("Minimum Capacity (MW)", min_value=0.0,
                                             value=float(defaults.get("Minimum Capacity (MW)", 0.1)), step=0.01),
             'connection_fees': st.number_input("Connection Fees (KRW)", min_value=0,
@@ -471,6 +479,54 @@ def main():
                 result_message = run_scenario(scenario, scenario_defaults, base_output_path)
                 results[scenario] = result_message
                 st.write(result_message)
+
+    input_directory = os.path.dirname(output_file_path)
+
+    if st.button("Analyse the output", key="analyse_button"):
+        if not os.path.exists(input_directory):
+            st.error(f"Invalid directory: {input_directory}. Please check the output path.")
+        else:
+            st.info("Running analysis...")
+            analysis = _analyse.PPAAnalysis(input_directory, discount_rate=0.05)
+            merged_total, npv_df = analysis.run()
+
+            # Optionally, save merged_total to an Excel file
+            merged_output_path = os.path.join(input_directory, "merged_results.xlsx")
+            with pd.ExcelWriter(merged_output_path, engine="openpyxl") as writer:
+                merged_total.to_excel(writer, sheet_name="Merged Total", index=False)
+                npv_df.to_excel(writer, sheet_name="NPV Analysis", index=False)
+
+            # Display results in Streamlit
+            st.subheader("Merged Total Data")
+            st.dataframe(merged_total)
+            st.subheader("NPV Analysis")
+            st.dataframe(npv_df)
+
+            st.success(f"Analysis completed! Results saved to: {merged_output_path}")
+            st.markdown(f"[Download Merged Results](sandbox://{merged_output_path})")
+
+    # if st.button("Analyse the output", key="analyse_button"):
+    #     if not os.path.exists(input_directory):
+    #         st.error(f"Invalid directory: {input_directory}. Please check the output path.")
+    #     else:
+    #         st.info("Running analysis...")
+    #         merged_results = _analyse.run_analysis(input_directory)
+    #
+    #         # Define the output file path for the merged results
+    #         merged_output_path = os.path.join(input_directory, "merged_results.xlsx")
+    #
+    #         # Save each dictionary entry (DataFrame) in a separate sheet
+    #         with pd.ExcelWriter(merged_output_path, engine="openpyxl") as writer:
+    #             for sheet_name, df in merged_results.items():
+    #                 df.to_excel(writer, sheet_name=sheet_name, index=False)  # Save each DataFrame as a sheet
+    #
+    #         # Display the merged results per sheet
+    #         for sheet_name, df in merged_results.items():
+    #             st.subheader(f"Merged Data for {sheet_name}")
+    #             st.dataframe(df)
+    #
+    #         st.success(f"Analysis completed! Results saved to: {merged_output_path}")
+
 
     elif run_model:
         st.write(f"\n\nOptimisation process start: {scenario_name}\n\n")
@@ -531,6 +587,7 @@ def main():
                 "Battery Max Hours (hours)",
                 "Battery Lifespan (years)",
                 "Discount rate (%)",
+                "Internal Rate of Return (%)",
                 "Buffer (m)",
                 "Bin Size",
                 "Minimum Capacity (MW)",
@@ -569,6 +626,7 @@ def main():
                 battery_parameters["max_hours"],
                 battery_parameters["lifespan"],
                 default_params['discount_rate'],
+                default_params['irr'],
                 default_params['buffer'],
                 default_params['bin_size'],
                 default_params['min_capacity'],
