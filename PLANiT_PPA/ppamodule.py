@@ -490,18 +490,7 @@ class PPAModel:
                 cyclic_state_of_charge=True
             )
 
-        result = network.optimize(
-            solver_name="highs",
-            solver_options={
-                "presolve": "off",  # Disable aggressive reductions
-                "feastol": 1e-6,  # Improve feasibility tolerance
-                "dual_feasibility_tolerance": 1e-6,  # Better precision in dual reductions
-                "mip_rel_gap": 1e-4,  # Avoid excessive LP relaxation
-                "mip_feas_tol": 1e-7  # Ensure integer feasibility
-            }
-        )
-
-        # result = network.optimize(solver_name = 'glpk')
+        result = network.optimize(solver_name = 'glpk')
 
         import logging
 
