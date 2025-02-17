@@ -274,7 +274,12 @@ class PPAModel:
 
         cost_df = pd.concat([df, windcost_df])
 
-        cost_df['LCOE'] = cost_df['LCOE'] * (1+irr)
+        cost_df['LCOE'] = cost_df['LCOE'] * (1 + irr)
+
+        # Introduce small differences to avoid identical marginal costs
+        cost_df['LCOE'] += np.linspace(0, 10, num=len(cost_df['LCOE']))
+
+        cost_df.to_excel("test.xlsx")
 
         """
         PPA Modelling starts here

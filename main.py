@@ -187,6 +187,7 @@ def run_scenario(scenario, scenario_defaults, base_output_path):
             "Battery Max Hours (hours)",
             "Battery Lifespan (years)",
             "Discount rate (%)",
+            "Internal Rate of Return (%)",
             "Buffer (m)",
             "Bin Size",
             "Minimum Capacity (MW)",
@@ -225,6 +226,7 @@ def run_scenario(scenario, scenario_defaults, base_output_path):
             battery_parameters["max_hours"],
             battery_parameters["lifespan"],
             default_params['discount_rate'],
+            default_params['irr'],
             default_params['buffer'],
             default_params['bin_size'],
             default_params['min_capacity'],
@@ -288,7 +290,7 @@ def main():
     except Exception as e:
         scenarios_df = None
         scenario_options = []
-        st.error("Could not load scenario defaults CSV file. Please ensure 'scenario_defaults.xlsx' exists.")
+        st.error("Could not load scenario defaults Scenario file. Please ensure 'scenario_defaults.xlsx' exists.")
 
     # -------------------------------
     # Buttons to run either a single scenario or all scenarios
@@ -307,13 +309,13 @@ def main():
         run_all = st.button("Run All Scenarios")
     with col3:
         # --- Reload CSV button ---
-        if st.button("Reload CSV File", key="reload_csv"):
+        if st.button("Reload Scenario File", key="reload_csv"):
             try:
                 # Re-read the CSV file and then force a rerun
                 scenarios_df = pd.read_excel("scenario_defaults.xlsx", index_col=0)
                 # st.success("CSV file reloaded successfully!")
             except Exception as e:
-                st.error(f"Could not reload CSV file: {e}")
+                st.error(f"Could not reload Scenario file: {e}")
 
     with col1:
         st.subheader("Scenario Selection")
@@ -445,7 +447,7 @@ def main():
                                              value=float(defaults.get("Discount Rate (%)", 0.05)), step=0.001),
 
             'irr': st.number_input("Internal Rate of Return (%)", min_value=0.0, max_value=1.0,
-                                             value=float(defaults.get("Discount Rate (%)", 0.05)), step=0.001),
+                                             value=float(defaults.get("Internal Rate of Return (%)", 0.075)), step=0.001),
 
 
             'buffer': st.number_input("Buffer (m)", min_value=0,
