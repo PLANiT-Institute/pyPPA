@@ -276,10 +276,7 @@ class PPAModel:
 
         cost_df['LCOE'] = cost_df['LCOE'] * (1 + irr)
 
-        # Introduce small differences to avoid identical marginal costs
-        cost_df['LCOE'] += np.linspace(0, 10, num=len(cost_df['LCOE']))
-
-        cost_df.to_excel("test.xlsx")
+        cost_df.to_excel('test.xlsx', index=False)
 
         """
         PPA Modelling starts here
@@ -404,7 +401,7 @@ class PPAModel:
             ].reindex(snapshots, fill_value=0)
 
         # Add a curtailment bus to track curtailed energy
-        network.add("Bus", "curtailment_bus", carrier="curtailment")
+        # network.add("Bus", "curtailment_bus", carrier="curtailment")
 
         for i, row in cost_df.iterrows():
 
@@ -445,16 +442,6 @@ class PPAModel:
                 p_max_pu=p_max_pu
             )
 
-            # Add a curtailment link for tracking curtailed energy
-            network.add(
-                "Link",
-                f"curtailment_{generator_name}",
-                bus0="one_bus",  # Energy flows from one_bus
-                bus1="curtailment_bus",  # Energy gets dumped in curtailment bus
-                p_nom_extendable=True,  # Allow curtailment to scale as needed
-                efficiency=1.0  # No energy loss in curtailment
-            )
-
             # Redefine if self_max_grid_share is True
             if self.max_grid_share != 1:  # max PPA share is > 0, then define the PPA payment type
                 if self.ppa_payment_type == "Levelised":
@@ -470,6 +457,7 @@ class PPAModel:
                     network.generators.loc[generator_name, "e_sum_max"] = max_generation
                     # print(f"Set e_sum_max for generator '{generator_name}' to {max_generation:.2f} MWh.")
 
+
             # Grid share constraints
         if self.max_grid_share is not None and 0 < self.max_grid_share < 1:
             total_demand = load_df['value'].sum() * (
@@ -483,6 +471,8 @@ class PPAModel:
                 sense=self.sense,
                 constant=total_demand * self.max_grid_share
             )
+
+        network.add("Carrier", "battery", color="red")  # Define battery carrier
 
             # Battery
         if self.battery_parameters['include']:
@@ -500,8 +490,18 @@ class PPAModel:
                 cyclic_state_of_charge=True
             )
 
-            # Solve
-        result = network.optimize()
+        result = network.optimize(
+            solver_name="highs",
+            solver_options={
+                "presolve": "off",  # Disable aggressive reductions
+                "feastol": 1e-6,  # Improve feasibility tolerance
+                "dual_feasibility_tolerance": 1e-6,  # Better precision in dual reductions
+                "mip_rel_gap": 1e-4,  # Avoid excessive LP relaxation
+                "mip_feas_tol": 1e-7  # Ensure integer feasibility
+            }
+        )
+
+        # result = network.optimize(solver_name = 'glpk')
 
         import logging
 
@@ -664,22 +664,22 @@ class PPAModel:
             actual_generation = network.generators_t.p
 
             # Extract curtailment power flow
-            curtailment_flows = network.links_t.p1.filter(like="curtailment_")
+            # curtailment_flows = network.links_t.p1.filter(like="curtailment_")
 
             # Summarize results for each carrier
             effective_generation = actual_generation.groupby(network.generators.carrier, axis=1).sum()
-            curtailed_generation = curtailment_flows.groupby(network.links.carrier, axis=1).sum()
+            # curtailed_generation = curtailment_flows.groupby(network.links.carrier, axis=1).sum()
 
             # Display results
             print("\nEffective Generation (MWh):")
             print(effective_generation.sum())
 
-            print("\nCurtailed Generation (MWh):")
-            print(curtailed_generation.sum())
+            # print("\nCurtailed Generation (MWh):")
+            # print(curtailed_generation.sum())
 
             # Store results in output_analysis for further use
             output_analysis["effective generation (MWh)"] = effective_generation
-            output_analysis["curtailed generation (MWh)"] = curtailed_generation
+            # output_analysis["curtailed generation (MWh)"] = curtailed_generation
 
             # Generation share
             output_analysis["share (%)"] = output_analysis['generation (GWh)'].div(

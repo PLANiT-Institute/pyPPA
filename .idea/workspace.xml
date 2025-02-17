@@ -5,14 +5,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b551a797-c6c4-4f45-a866-3bd42b33ba27" name="Changes" comment="Battery update">
-      <change afterPath="$PROJECT_DIR$/test.xlsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/PLANiT_PPA/ppamodule.py" beforeDir="false" afterPath="$PROJECT_DIR$/PLANiT_PPA/ppamodule.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/output/PPA100_REF.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/output/PPA100_REF.xlsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/output/merged_results.xlsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/scenario_defaults - run.xlsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/output/PPA100_REF.xlsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/output/REC100_REF.xlsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/scenario_defaults.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/scenario_defaults.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/test.xlsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -228,7 +227,9 @@
       <workItem from="1739610765147" duration="2915000" />
       <workItem from="1739615722637" duration="299000" />
       <workItem from="1739616272080" duration="143000" />
-      <workItem from="1739796981600" duration="3488000" />
+      <workItem from="1739796981600" duration="8063000" />
+      <workItem from="1739805530326" duration="1599000" />
+      <workItem from="1739808587573" duration="4495000" />
     </task>
     <task id="LOCAL-00001" summary="v0.0.1 - Almost there&#10;Next step to add LCOE, marginal costs">
       <option name="closed" value="true" />
@@ -558,7 +559,15 @@
       <option name="project" value="LOCAL" />
       <updated>1739610956916</updated>
     </task>
-    <option name="localTasksCounter" value="42" />
+    <task id="LOCAL-00042" summary="Battery update">
+      <option name="closed" value="true" />
+      <created>1739800845479</created>
+      <option name="number" value="00042" />
+      <option name="presentableId" value="LOCAL-00042" />
+      <option name="project" value="LOCAL" />
+      <updated>1739800845479</updated>
+    </task>
+    <option name="localTasksCounter" value="43" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
