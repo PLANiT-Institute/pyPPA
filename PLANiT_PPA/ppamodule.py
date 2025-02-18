@@ -73,7 +73,6 @@ class PPAModel:
 
         print("\n\n\n ========== PPA Calulcation Starts ========== \n\n\n")
 
-
         print("Calculate PV CAPEX")
 
         # Read grid data
@@ -81,6 +80,7 @@ class PPAModel:
 
         solar_capex_df = gridinf_df['solar_capex']
         wind_capex_df = gridinf_df['wind_capex']
+        irr = self.default_params['irr']
 
         # Create rec_grid
         if self.rec_reduction:
@@ -208,6 +208,8 @@ class PPAModel:
             plot=False
         )
 
+        # pv_stats['LCOE'] = pv_stats['LCOE'] * (1+irr)
+
         agri_stats['LCOE'] = _cost.annualise_capital_cost(
             capacity_factors.loc[self.model_year].astype(float).value,
             agri_stats['max_cost'],
@@ -218,6 +220,8 @@ class PPAModel:
             min_smp=smp_grid,
             plot=False
         )
+
+        # agri_stats['LCOE'] = pv_stats['LCOE'] * (1 + irr)
 
         pv_stats['type'] = 'PV'
         agri_stats['type'] = 'agriPV'
@@ -269,6 +273,10 @@ class PPAModel:
         windcost_df['capital_cost'] = wind_capex_df.loc[self.model_year]
 
         cost_df = pd.concat([df, windcost_df])
+
+        cost_df['LCOE'] = cost_df['LCOE'] * (1 + irr)
+
+        cost_df.to_excel('test.xlsx', index=False)
 
         """
         PPA Modelling starts here
@@ -393,7 +401,7 @@ class PPAModel:
             ].reindex(snapshots, fill_value=0)
 
         # Add a curtailment bus to track curtailed energy
-        network.add("Bus", "curtailment_bus", carrier="curtailment")
+        # network.add("Bus", "curtailment_bus", carrier="curtailment")
 
         for i, row in cost_df.iterrows():
 
@@ -434,16 +442,6 @@ class PPAModel:
                 p_max_pu=p_max_pu
             )
 
-            # Add a curtailment link for tracking curtailed energy
-            network.add(
-                "Link",
-                f"curtailment_{generator_name}",
-                bus0="one_bus",  # Energy flows from one_bus
-                bus1="curtailment_bus",  # Energy gets dumped in curtailment bus
-                p_nom_extendable=True,  # Allow curtailment to scale as needed
-                efficiency=1.0  # No energy loss in curtailment
-            )
-
             # Redefine if self_max_grid_share is True
             if self.max_grid_share != 1:  # max PPA share is > 0, then define the PPA payment type
                 if self.ppa_payment_type == "Levelised":
@@ -459,6 +457,7 @@ class PPAModel:
                     network.generators.loc[generator_name, "e_sum_max"] = max_generation
                     # print(f"Set e_sum_max for generator '{generator_name}' to {max_generation:.2f} MWh.")
 
+
             # Grid share constraints
         if self.max_grid_share is not None and 0 < self.max_grid_share < 1:
             total_demand = load_df['value'].sum() * (
@@ -472,6 +471,8 @@ class PPAModel:
                 sense=self.sense,
                 constant=total_demand * self.max_grid_share
             )
+
+        network.add("Carrier", "battery", color="red")  # Define battery carrier
 
             # Battery
         if self.battery_parameters['include']:
@@ -489,8 +490,7 @@ class PPAModel:
                 cyclic_state_of_charge=True
             )
 
-            # Solve
-        result = network.optimize()
+        result = network.optimize(solver_name = 'glpk')
 
         import logging
 
@@ -557,19 +557,16 @@ class PPAModel:
             print("Details of generators with positive dispatch:")
             print(active_generators.columns.tolist())
 
-            # Group by carrier and sum capacity
-            total_capacity_by_carrier = network.generators.groupby("carrier")["p_nom_opt"].sum()
-            output_analysis["capacity (MW)"] = pd.DataFrame(
-                [total_capacity_by_carrier] * (analysis_period + 1),
-                index=range(self.model_year, self.model_year + (analysis_period + 1))
-            )
+            # Calculate generation by generator
+            generation_by_generator = network.generators_t.p.loc[:, active_generators.columns].sum()
+            output_analysis["generation by generator (MWh)"] = generation_by_generator
 
-            print("Total Capacity Needed by Carrier (MW):")
-            print(total_capacity_by_carrier)
+            print("\nGeneration by Generator (MWh):")
+            print(generation_by_generator)
 
             # Group generation
             generation_by_carrier = network.generators_t.p.groupby(network.generators.carrier, axis=1).sum()
-            print("Generation by Carrier (GWh):")
+            print("\nGeneration by Carrier (GWh):")
             print(generation_by_carrier.sum() / 1000)
             total_generation_by_carrier = generation_by_carrier.sum() / 1000
 
@@ -578,36 +575,110 @@ class PPAModel:
                 index=range(self.model_year, self.model_year + (analysis_period + 1))
             )
 
+            # Group by carrier and sum capacity
+            total_capacity_by_carrier = network.generators.groupby("carrier")["p_nom_opt"].sum()
+            output_analysis["capacity (MW)"] = pd.DataFrame(
+                [total_capacity_by_carrier] * (analysis_period + 1),
+                index=range(self.model_year, self.model_year + (analysis_period + 1))
+            )
+
+            print("\nTotal Capacity Assumed by Carrier (MW):")
+            print(total_capacity_by_carrier)
+
+            # Aggregate active capacities by carrier
+            active_capacity_by_carrier = network.generators.loc[active_generators.columns].groupby("carrier")[
+                "p_nom_opt"].sum()
+            output_analysis["active capacity by carrier (MW)"] = active_capacity_by_carrier
+
+            print("\nActive Capacity by Carrier (MW):")
+            print(active_capacity_by_carrier)
+
+            # Aggregate active capacities by generator
+            active_capacity_by_generator = network.generators.loc[active_generators.columns, ["p_nom_opt"]]
+            output_analysis["active capacity by generator (MW)"] = active_capacity_by_generator
+
+            print("\nActive Capacity by Generator (MW):")
+            print(active_capacity_by_generator)
+
+            # Adjusted capacity using peak generation by generator (only for positive dispatch)
+            adjusted_capacity_by_generator = network.generators_t.p.loc[:, active_generators.columns].max()
+            output_analysis["adjusted capacity by generator (MW)"] = adjusted_capacity_by_generator
+
+            print("\nAdjusted Capacity by Generator (MW):")
+            print(adjusted_capacity_by_generator)
+
+            # Adjusted capacity using peak generation by carrier (sum of adjusted capacity by generator by carrier)
+            adjusted_capacity_by_carrier = adjusted_capacity_by_generator.groupby(network.generators.carrier).sum()
+            output_analysis["adjusted capacity by carrier (MW)"] = adjusted_capacity_by_carrier
+
+            print("\nAdjusted Capacity by Carrier (MW):")
+            print(adjusted_capacity_by_carrier)
+
+            # Aggregate active capacities by carrier
+            active_capacity_by_carrier = network.generators.loc[active_generators.columns].groupby("carrier")[
+                "p_nom_opt"].sum()
+            output_analysis["active capacity by carrier (MW)"] = active_capacity_by_carrier
+
+            # Calculate active capacity factor
+            active_capacity_factor_by_generator = generation_by_generator / (
+                        active_capacity_by_generator["p_nom_opt"] * 8760)
+            output_analysis["active capacity factor by generator"] = active_capacity_factor_by_generator
+
+            active_capacity_factor_by_carrier = generation_by_generator.groupby(network.generators.carrier).sum() / (
+                        active_capacity_by_carrier * 8760)
+            output_analysis["active capacity factor by carrier"] = active_capacity_factor_by_carrier
+
+            print("\nActive Capacity Factor by Generator (%):")
+            print(active_capacity_factor_by_generator * 100)
+
+            print("\nActive Capacity Factor by Carrier (%):")
+            print(active_capacity_factor_by_carrier * 100)
+
+            # Calculate adjusted capacity factor
+            adjusted_capacity_factor_by_generator = generation_by_generator / (adjusted_capacity_by_generator * 8760)
+            output_analysis["adjusted capacity factor by generator"] = adjusted_capacity_factor_by_generator
+
+            adjusted_capacity_factor_by_carrier = generation_by_generator.groupby(network.generators.carrier).sum() / (
+                        adjusted_capacity_by_carrier * 8760)
+            output_analysis["adjusted capacity factor by carrier"] = adjusted_capacity_factor_by_carrier
+
+            print("\nAdjusted Capacity Factor by Generator:")
+            print(adjusted_capacity_factor_by_generator)
+
+            print("\nAdjusted Capacity Factor by Carrier:")
+            print(adjusted_capacity_factor_by_carrier)
+
+
             # Extract actual generation from results
             actual_generation = network.generators_t.p
 
             # Extract curtailment power flow
-            curtailment_flows = network.links_t.p1.filter(like="curtailment_")
+            # curtailment_flows = network.links_t.p1.filter(like="curtailment_")
 
             # Summarize results for each carrier
             effective_generation = actual_generation.groupby(network.generators.carrier, axis=1).sum()
-            curtailed_generation = curtailment_flows.groupby(network.links.carrier, axis=1).sum()
+            # curtailed_generation = curtailment_flows.groupby(network.links.carrier, axis=1).sum()
 
             # Display results
             print("\nEffective Generation (MWh):")
             print(effective_generation.sum())
 
-            print("\nCurtailed Generation (MWh):")
-            print(curtailed_generation.sum())
+            # print("\nCurtailed Generation (MWh):")
+            # print(curtailed_generation.sum())
 
             # Store results in output_analysis for further use
             output_analysis["effective generation (MWh)"] = effective_generation
-            output_analysis["curtailed generation (MWh)"] = curtailed_generation
+            # output_analysis["curtailed generation (MWh)"] = curtailed_generation
 
             # Generation share
             output_analysis["share (%)"] = output_analysis['generation (GWh)'].div(
                 output_analysis['generation (GWh)'].sum(axis=1), axis=0
             )
 
-            print("Usage rate (%):")
+            print("\nUsage rate (%):")
             print(generation_by_carrier.sum() / 8760 / total_capacity_by_carrier * 100)
 
-            print("Share of each source (%)")
+            print("\nShare of each source (%)")
             print(generation_by_carrier.sum() / generation_by_carrier.sum().sum() * 100)
             # Calculate total marginal cost by carrier
 
@@ -657,14 +728,14 @@ class PPAModel:
                 for year, cost in rate_adjusted_costs.items():
                     output_analysis["marginal cost (KRW)"].loc[year, "grid_electricity"] = cost
 
-            print("Total Marginal Costs by Carrier (KRW)")
+            print("\nTotal Marginal Costs by Carrier (KRW)")
             print(marginal_cost_by_carrier)
 
             cost_per_mwh = (
                     marginal_cost_by_carrier /
                     total_generation_by_carrier.replace(0, 1e-10)
             ).astype(float).round(2)
-            print("Amount to be paid per MWh (rounded to 2 decimal places):")
+            print("\nAmount to be paid per MWh (rounded to 2 decimal places):")
             print(cost_per_mwh)
 
             output_analysis["cost per MWh (KRW)"] = output_analysis["marginal cost (KRW)"].div(
@@ -703,10 +774,10 @@ class PPAModel:
                     output_analysis["carbon price (KRW)"]
             )
 
-            print(f"Total payment without Battery (Billion KRW in {self.model_year}):")
+            print(f"\nTotal payment without Battery (Billion KRW in {self.model_year}):")
             print(output_analysis["total payment (KRW)"].iloc[0] / 1e9)
 
-            print(f"Payment without Battery (KRW/MWh in {self.model_year}):")
+            print(f"\nPayment without Battery (KRW/MWh in {self.model_year}):")
             print(output_analysis["total payment (KRW)"].iloc[0] / output_analysis['generation (GWh)'].loc[
                 self.model_year].sum() / 1000)
 
@@ -733,9 +804,27 @@ class PPAModel:
                 # Compute annualized battery cost (KRW per year)
                 annualized_battery_cost = battery_capital_cost * annuity_factor
 
-                years = range(self.model_year, self.end_year + 1)
-                output_analysis["ESS capacity (MW)"] = pd.Series(battery_capacity, index=years)
-                output_analysis["ESS annualized cost (KRW per y)"] = pd.Series(annualized_battery_cost, index=years)
+                # Define year range for analysis
+                years = list(range(self.model_year, self.end_year + 1))
+
+                # Create DataFrame for ESS capacity
+                output_analysis["ESS capacity (MW)"] = pd.DataFrame({
+                    "year": years,
+                    "Value": battery_capacity  # Broadcast value over all years
+                }).set_index("year")  # Ensure "year" is the index
+
+                # Create DataFrame for annualized ESS cost
+                output_analysis["ESS annualized cost (KRW per y)"] = pd.DataFrame({
+                    "year": years,
+                    "Value": annualized_battery_cost  # Broadcast value over all years
+                }).set_index("year")  # Ensure "year" is the index
+
+                # Print to verify correctness
+                print("\nCorrected ESS Capacity (MW):")
+                print(output_analysis["ESS capacity (MW)"])
+
+                print("\nCorrected ESS Annualized Cost (KRW per y):")
+                print(output_analysis["ESS annualized cost (KRW per y)"])
 
                 # -------- Retrieve battery charge/discharge --------
                 battery_p = network.storage_units_t.p["Battery"]
@@ -755,24 +844,36 @@ class PPAModel:
 
                 # -------- Store annual results in 'year'/'value' format --------
 
-                # 1) Discharge
+                # Retrieve battery charge/discharge data for all years
+                battery_p = network.storage_units_t.p["Battery"]
+                battery_discharge_hourly = battery_p.clip(lower=0)  # Discharge (positive values)
+                battery_charge_hourly = battery_p.clip(upper=0).abs()  # Charge (negative values made positive)
+
+                # Resample to get yearly sum for all years in the dataset
+                battery_discharge_annual = battery_discharge_hourly.resample('Y').sum()
+                battery_charge_annual = battery_charge_hourly.resample('Y').sum()
+
+                # Convert index to years and store as DataFrame
                 discharge_annual_df = pd.DataFrame({
-                    "year": [self.model_year],  # The year you solved
-                    "Value": [battery_discharge_annual]
-                })
-                discharge_annual_df.index.name = None  # To keep it clean if you like
+                    "year": battery_discharge_annual.index.year,
+                    "Value": battery_discharge_annual.values
+                }).set_index("year")  # Ensure "year" is the index
 
-                # 2) Charge
                 charge_annual_df = pd.DataFrame({
-                    "year": [self.model_year],
-                    "Value": [battery_charge_annual]
-                })
-                charge_annual_df.index.name = None
+                    "year": battery_charge_annual.index.year,
+                    "Value": battery_charge_annual.values
+                }).set_index("year")  # Ensure "year" is the index
 
-                # Put these DataFrames into your output_analysis dictionary
+                # Store corrected annual results
                 output_analysis["annual discharge (MWh)"] = discharge_annual_df
                 output_analysis["annual charge (MWh)"] = charge_annual_df
 
+                # Print to verify correctness
+                print("\nCorrected Annual ESS Discharge (MWh):")
+                print(discharge_annual_df)
+
+                print("\nCorrected Annual ESS Charge (MWh):")
+                print(charge_annual_df)
 
             # Ensure all output_analysis DataFrames have 'year' as index name if it's empty
             for key, df in output_analysis.items():
