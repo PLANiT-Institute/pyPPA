@@ -2,7 +2,7 @@ import pandas as pd
 import PLANiT_PPA.costutils as _cost
 
 # Example Usage
-file_path = './data/global_benchmark_IRENA.xlsx'
+file_path = './rawdata/global_benchmark_IRENA.xlsx'
 
 # Aggregation methods and percentiles
 agg_methods = ['min', 'median', 'max']
