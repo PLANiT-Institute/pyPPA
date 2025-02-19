@@ -305,8 +305,8 @@ def main():
         run_model = st.button("Run PPA Model")
 
     with col2:
-
         run_all = st.button("Run All Scenarios")
+
     with col3:
         # --- Reload CSV button ---
         if st.button("Reload Scenario File", key="reload_csv"):
@@ -453,7 +453,7 @@ def main():
             'buffer': st.number_input("Buffer (m)", min_value=0,
                                       value=int(defaults.get("Buffer (m)", 25000)), step=1000),
             'bin_size': st.number_input("Bin Size (GW)", min_value=0.0,
-                                        value=float(defaults.get("Bin Size", 1)), step=0.01),
+                                        value=float(defaults.get("Bin Size", 10)), step=0.01),
             'min_capacity': st.number_input("Minimum Capacity (MW)", min_value=0.0,
                                             value=float(defaults.get("Minimum Capacity (MW)", 0.1)), step=0.01),
             'connection_fees': st.number_input("Connection Fees (KRW)", min_value=0,
@@ -510,32 +510,10 @@ def main():
             st.success(f"Analysis completed! Results saved to: {merged_output_path}")
             st.markdown(f"[Download Merged Results](sandbox://{merged_output_path})")
 
-    # if st.button("Analyse the output", key="analyse_button"):
-    #     if not os.path.exists(input_directory):
-    #         st.error(f"Invalid directory: {input_directory}. Please check the output path.")
-    #     else:
-    #         st.info("Running analysis...")
-    #         merged_results = _analyse.run_analysis(input_directory)
-    #
-    #         # Define the output file path for the merged results
-    #         merged_output_path = os.path.join(input_directory, "merged_results.xlsx")
-    #
-    #         # Save each dictionary entry (DataFrame) in a separate sheet
-    #         with pd.ExcelWriter(merged_output_path, engine="openpyxl") as writer:
-    #             for sheet_name, df in merged_results.items():
-    #                 df.to_excel(writer, sheet_name=sheet_name, index=False)  # Save each DataFrame as a sheet
-    #
-    #         # Display the merged results per sheet
-    #         for sheet_name, df in merged_results.items():
-    #             st.subheader(f"Merged Data for {sheet_name}")
-    #             st.dataframe(df)
-    #
-    #         st.success(f"Analysis completed! Results saved to: {merged_output_path}")
-
-
     elif run_model:
         st.write(f"\n\nOptimisation process start: {scenario_name}\n\n")
 
+        # Instantiate the PPA model using these defaults
         ppa_model = _ppa.PPAModel(
             loads_config,
             battery_include,
@@ -645,9 +623,10 @@ def main():
         parameters_df = pd.DataFrame(parameters_summary)
         output = ppa_model.run_model()
 
+
         if output != "Infeasible":
             st.subheader("Output File Selection")
-            st.write(output)
+            # st.write(output)
 
             try:
                 parameters_df = parameters_df.applymap(
@@ -658,7 +637,10 @@ def main():
                     parameters_df.to_excel(writer, sheet_name="Parameters Summary", index=False)
 
                     for sheet_name, data in output.items():
-                        if isinstance(data, pd.Series):
+                        if isinstance(data, str):
+                            from io import StringIO
+                            df = pd.read_csv(StringIO(data), delim_whitespace=True)
+                        elif isinstance(data, pd.Series):
                             df = data.to_frame(name="Value")
                         elif isinstance(data, pd.DataFrame):
                             df = data
@@ -666,18 +648,6 @@ def main():
                             st.warning(f"Unrecognized data format for sheet '{sheet_name}'. Skipping.")
                             continue
 
-                        # Fix column types
-                        df.columns = df.columns.astype(str)  # Ensure column names are strings
-
-                        for col in df.columns:
-                            if df[col].dtype == 'object':  # Check for non-numeric columns
-                                df[col] = df[col].astype(str).str.replace(',', '', regex=True)
-                                df[col] = pd.to_numeric(df[col], errors='coerce')  # Convert to float
-
-                        df = df.dropna(how="all")  # Drop empty rows
-                        df.fillna(0, inplace=True)  # Fill NaNs with 0
-
-                        # Limit sheet name to 31 characters
                         valid_sheet_name = sheet_name[:31] if len(sheet_name) > 31 else sheet_name
                         df.to_excel(writer, sheet_name=valid_sheet_name, index=True)
 
@@ -685,7 +655,6 @@ def main():
 
             except Exception as e:
                 st.error(f"An error occurred while saving the output: {e}")
-
         else:
             st.warning("The model is infeasible. Please check your inputs and try again.")
 

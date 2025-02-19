@@ -4,13 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b551a797-c6c4-4f45-a866-3bd42b33ba27" name="Changes" comment="Battery update">
+    <list default="true" id="b551a797-c6c4-4f45-a866-3bd42b33ba27" name="Changes" comment="Solver setting update">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PLANiT_PPA/ppamodule.py" beforeDir="false" afterPath="$PROJECT_DIR$/PLANiT_PPA/ppamodule.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/output/PPA100_REF.xlsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/output/REC100_REF.xlsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/scenario_defaults.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/scenario_defaults.xlsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/test.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/test.xlsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -230,6 +226,7 @@
       <workItem from="1739796981600" duration="8063000" />
       <workItem from="1739805530326" duration="1599000" />
       <workItem from="1739808587573" duration="4495000" />
+      <workItem from="1739946744786" duration="3016000" />
     </task>
     <task id="LOCAL-00001" summary="v0.0.1 - Almost there&#10;Next step to add LCOE, marginal costs">
       <option name="closed" value="true" />
