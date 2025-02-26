@@ -410,8 +410,8 @@ class PPAModel:
             if row['type'] in ['PV', 'agriPV']:
                 pattern_df = solarpattern_df
             else:
+                # pattern_df = pd.Series(0, index=snapshots)
                 pattern_df = windpattern_df.get(row['region'], pd.Series(0, index=snapshots))
-
             if pattern_df.max() > 1:
                 raise ValueError("The pattern_df has values greater than 1")
 
